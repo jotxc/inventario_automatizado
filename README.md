@@ -1,4 +1,4 @@
-# Projeto de Automação de Inventário com Excel e Power Query
+# Projeto de Automação de Inventário 
 Projeto criado a partir de um problema real identificado durante operações de inventário em estoque. O objetivo é reduzir atividades manuais, melhorar a confiabilidade das contagens e evoluir gradualmente a solução até um sistema completo de apoio operacional.
 
 ## Contexto
