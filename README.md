@@ -58,3 +58,10 @@ Este repositório documenta toda essa evolução.
 ## Objetivo profissional
 
 Este é meu primeiro projeto profissional voltado para automação de processos logísticos e análise de dados, servindo como base para evolução futura em desenvolvimento de sistemas e engenharia de dados.
+
+## Atualizações
+
+### 11/06/2026
+
+- Criação do repositório.
+- Estrutura inicial do projeto.
