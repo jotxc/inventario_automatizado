@@ -39,16 +39,13 @@ def extrair_nivel(posicao):
     """
     if pd.isna(posicao):
         return None
-
-    if eh_posicao_especial(posicao):
-        return None
-
+    
     codigo = posicao[3:]
 
-    if possui_sufixo(posicao):
-        codigo = codigo[:-1]
+    if not codigo:
+        return None
 
-    if not codigo or not codigo[0].isdigit():
+    if not codigo[0].isdigit():
         return None
 
     return int(codigo[0])
