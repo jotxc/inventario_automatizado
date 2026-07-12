@@ -99,10 +99,11 @@ def remover_lotes_acima_nivel_1(estoque):
         ["lote", "tipo_deposito"])["nivel"]
         .max()
         .reset_index()
+        .rename(columns={"nivel": "nivel_max"})
     )
 
     lotes_nivel["bloquear_lote"] = (
-        lotes_nivel["nivel"] > 1
+        lotes_nivel["nivel_max"] > 1
     )
 
     estoque = estoque.merge(
@@ -116,7 +117,7 @@ def remover_lotes_acima_nivel_1(estoque):
     ]
 
     estoque = estoque.drop(
-        columns=["bloquear_lote"]
+        columns=["bloquear_lote", "nivel_max"]
     )
 
     return estoque
