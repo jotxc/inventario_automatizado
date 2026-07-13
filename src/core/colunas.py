@@ -25,3 +25,13 @@ COLUNAS_OBRIGATORIAS = [
     "posicao",
     "tipo_deposito",
 ]
+
+COLUNAS_YMM141 = {
+    "Doc.Inventário": "documento_inventario",
+    "Material": "material",
+    "Lote": "lote",
+    "Tp.": "tipo_deposito",
+    "Data Primeira Cont": "data_contagem",
+    "Quantidade Contabilistica": "quantidade_sistema",
+    "Qtd Primeira Cnt": "quantidade_contada",
+}
