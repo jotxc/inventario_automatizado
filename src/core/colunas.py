@@ -35,3 +35,10 @@ COLUNAS_YMM141 = {
     "Quantidade Contabilistica": "quantidade_sistema",
     "Qtd Primeira Cnt": "quantidade_contada",
 }
+
+COLUNAS_CUSTOS = {
+
+    "Material": "material",
+    "Custo Uni.": "custo_unitario"
+
+}
