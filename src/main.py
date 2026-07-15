@@ -13,6 +13,7 @@ from regras.bloqueios import remover_lotes_em_ordem, remover_posicoes_330_em_ord
 from regras.priorizacao import priorizar_lotes
 from regras.selecao import selecionar_lotes, selecionar_posicoes
 from regras.ordenacao import ordenar_posicoes
+from exportacao.exportar_documento import exportar_documento
 
 def main():
 
@@ -56,22 +57,23 @@ def main():
     sugestao = selecionar_lotes(sugestao, limite_posicoes= 100)
     estoque_selecionado = selecionar_posicoes(estoque, sugestao)
     estoque_selecionado = ordenar_posicoes(estoque_selecionado)
+    exportar_documento(estoque_selecionado, "Documento_Inventario.xlsx")
 
 #TESTE TEMPORÁRIO
-    print()
+    print("\nDocumento final:")
 
     print(
         estoque_selecionado[
             [
+                "posicao",
+                "material",
+                "descricao_material",
+                "lote",
                 "rua",
-                "numero_posicao",
-                "especial",
-                "prioridade_posicao",
                 "nivel",
-                "sufixo",
-                "posicao"
+                "numero_posicao"
             ]
-        ].head(50)
+        ].head(30)
     )
             
 if __name__ == "__main__":
