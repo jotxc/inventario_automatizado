@@ -14,7 +14,7 @@ def eh_posicao_especial(posicao):
     if pd.isna(posicao):
         return False
     
-    return "W" in posicao
+    return "W" in posicao[3:]
 
 
 def possui_sufixo(posicao):
@@ -77,3 +77,62 @@ def extrair_numero(posicao):
         return None
 
     return int(codigo[1:])
+
+def preparar_posicoes(estoque):
+
+    estoque = estoque.copy()
+
+    estoque["rua"] = (
+        estoque["posicao"].apply(extrair_rua)
+    )
+
+    estoque["nivel"] = (
+        estoque["posicao"].apply(extrair_nivel)
+    )
+
+    estoque["numero_posicao"] = (
+        estoque["posicao"].apply(extrair_numero)
+    )
+
+    estoque["especial"] = (
+        estoque["posicao"].apply(eh_posicao_especial)
+    )
+    
+    estoque["prioridade_posicao"] = (
+        estoque["especial"]
+        .map(
+            {
+                True: 0,
+                False: 1
+            }
+        )
+    )
+
+    estoque["sufixo"] = (
+        estoque["posicao"].apply(extrair_sufixo)
+    )
+
+    return estoque
+
+def extrair_tipo_posicao(posicao):
+
+    if pd.isna(posicao):
+        return None
+
+    if eh_posicao_especial(posicao):
+        return 0
+
+    if possui_sufixo(posicao):
+        return 2
+
+    return 1
+
+def extrair_sufixo(posicao):
+
+    if pd.isna(posicao):
+        return ""
+
+    if possui_sufixo(posicao):
+        return posicao[-1]
+
+    return ""

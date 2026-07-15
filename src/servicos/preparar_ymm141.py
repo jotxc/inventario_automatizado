@@ -27,5 +27,13 @@ def validar_colunas_ymm141(ymm141):
         raise ValueError(
             f"Colunas ausentes: {faltando}"
         )
+    
+    return ymm141
+    
+def remover_linhas_vazias_ymm141(ymm141):
+
+    ymm141 = ymm141.dropna(
+        subset=["lote"]
+    )
 
     return ymm141
