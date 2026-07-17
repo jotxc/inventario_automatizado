@@ -1,7 +1,7 @@
 CRITERIOS_DISPONIVEIS = {
     1: "primeira_contagem",
     2: "dias_sem_contagem",
-    3: "valor_lote"
+    3: "valor"
 }
 
 LIMITE_PADRAO_POSICOES = 100
