@@ -56,7 +56,9 @@ from exportacao.exportar_documento import exportar_documento
 
 from historico.historico_documentos import (
     criar_historico_documento,
-    salvar_historico_documento
+    salvar_historico_documento,
+    carregar_historico_documentos,
+    remover_lotes_historico
 )
 
 
@@ -81,7 +83,6 @@ def preparar_inventario():
     estoque = preparar_posicoes(estoque)
     estoque = remover_lotes_em_ordem(estoque)
     estoque = remover_posicoes_330_em_ordem(estoque)
-    estoque = remover_lotes_acima_nivel_1(estoque)
 
     resumo = resumir_ultima_contagem(ymm141)
 
@@ -107,34 +108,57 @@ def executar_inventario(
     criterio,
     limite_posicoes,
     tipo_deposito,
-    numero_documento
+    numero_documento="",
+    modo_sem_maquina=True
 ):
+
+    print("\nANTES DO FILTRO:", len(estoque))
 
     estoque = filtrar_tipo_deposito(
         estoque,
         tipo_deposito
     )
 
+    print("DEPOIS DO FILTRO:", len(estoque))
+
+    if modo_sem_maquina:
+        estoque = remover_lotes_acima_nivel_1(estoque)
+        print("DEPOIS DO MODO SEM MAQUINA:", len(estoque))
+
     sugestao = criar_sugestao_inventario(estoque)
+
+    print("APÓS CRIAR SUGESTÃO:", len(sugestao))
 
     sugestao = identificar_primeira_contagem(
         sugestao
     )
+
+    print("APÓS PRIMEIRA CONTAGEM:", len(sugestao))
+
+    historico = carregar_historico_documentos()
+    sugestao = remover_lotes_historico(sugestao, historico)
+    print("APÓS REMOVER HISTÓRICO:", len(sugestao))
 
     sugestao = priorizar_lotes(
         sugestao,
         criterio=criterio
     )
 
+    print("APÓS PRIORIZAÇÃO:", len(sugestao))
+
     sugestao = selecionar_lotes(
         sugestao,
         limite_posicoes=limite_posicoes
     )
 
+    print("APÓS SELEÇÃO:", len(sugestao))
+
     estoque_selecionado = selecionar_posicoes(
         estoque,
         sugestao
     )
+
+    print("ESTOQUE SELECIONADO:", len(estoque_selecionado))
 
     estoque_selecionado = ordenar_posicoes(
         estoque_selecionado
