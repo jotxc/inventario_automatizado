@@ -13,13 +13,13 @@ def main():
         estoque = preparar_inventario()
 #INTEGRAÇÃO SUGESTÃO
         tipo_deposito = obter_tipo_deposito(estoque)
-        numero_documento = input("\nDigite o número do documento SAP: ")
+        modo_sem_maquina = input("\nModo sem máquina? (S/n): ").strip().upper() != "N"
         resultado = executar_inventario(
                 estoque=estoque,
                 criterio=criterio,
                 limite_posicoes=limite_posicoes,
                 tipo_deposito=tipo_deposito,
-                numero_documento=numero_documento
+                modo_sem_maquina=modo_sem_maquina
         )
         mostrar_resumo(
                 sugestao=resultado["sugestao"],
