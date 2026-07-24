@@ -19,12 +19,12 @@ from ui.componentes.filtro_coluna_popup import FiltroColunaPopup
 
 
 COLUNAS_TABELA = [
-    {"chave": "material", "rotulo": "Material", "largura": 100, "alinhamento": "w"},
+    {"chave": "material", "rotulo": "Material", "largura": 100, "alinhamento": "w", "formato": "inteiro"},
     {"chave": "descricao_material", "rotulo": "Descri\u00e7\u00e3o", "largura": 220, "alinhamento": "w"},
     {"chave": "lote", "rotulo": "Lote", "largura": 100, "alinhamento": "w"},
     {"chave": "tipo_deposito", "rotulo": "Tipo Dep.", "largura": 90, "alinhamento": "center"},
     {"chave": "quantidade_posicoes", "rotulo": "Posi\u00e7\u00f5es", "largura": 90, "alinhamento": "center", "formato": "inteiro"},
-    {"chave": "estoque_total", "rotulo": "Est. Total", "largura": 110, "alinhamento": "e"},
+    {"chave": "estoque_total", "rotulo": "Est. Total", "largura": 130, "alinhamento": "e", "formato": "numero"},
     {"chave": "valor_lote", "rotulo": "Valor Total", "largura": 130, "alinhamento": "e", "formato": "moeda"},
     {"chave": "dias_sem_contagem", "rotulo": "Dias s/ Cont.", "largura": 110, "alinhamento": "center", "formato": "inteiro"},
     {"chave": "ultima_contagem", "rotulo": "Data \u00dalt. Cont.", "largura": 130, "alinhamento": "center", "formato": "data"},
@@ -50,10 +50,11 @@ CRITERIO_SECUNDARIO_MAP = {
 
 class TelaVisualizacaoEstoque(ctk.CTkFrame):
 
-    def __init__(self, master, controller, ao_exibir_resultado=None):
+    def __init__(self, master, controller, ao_exibir_resultado=None, ao_exibir_visao_geral=None):
         super().__init__(master, fg_color=COR_FUNDO)
         self.controller = controller
         self.ao_exibir_resultado = ao_exibir_resultado
+        self.ao_exibir_visao_geral = ao_exibir_visao_geral
 
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(3, weight=1)
@@ -66,6 +67,7 @@ class TelaVisualizacaoEstoque(ctk.CTkFrame):
         self.cabecalho.grid(row=0, column=0, sticky="ew")
 
         self.ultimo_modo_sem_maquina = True
+        self._resize_timer = None
 
         self._criar_filtros()
         self._criar_barra_exclusao()
@@ -74,11 +76,77 @@ class TelaVisualizacaoEstoque(ctk.CTkFrame):
         self.rodape = Rodape(self)
         self.rodape.grid(row=5, column=0, sticky="ew", padx=40, pady=(0, 15))
 
+        self._criar_overlay_carregamento()
+
+        self.winfo_toplevel().bind("<Configure>", self._agendar_ajuste, add="+")
+
         self.after(300, self._iniciar_carregamento)
+
+    def _agendar_ajuste(self, event=None):
+        if self._resize_timer:
+            self.after_cancel(self._resize_timer)
+        self._resize_timer = self.after(50, self._ajustar_layout)
+
+    def _ajustar_layout(self):
+        self._resize_timer = None
+        self.update_idletasks()
+
+    def _criar_overlay_carregamento(self):
+        self.overlay = ctk.CTkFrame(self, fg_color=COR_FUNDO)
+        self.overlay.grid(row=1, column=0, rowspan=4, sticky="nsew")
+        self.overlay.grid_rowconfigure(0, weight=1)
+        self.overlay.grid_columnconfigure(0, weight=1)
+
+        container = ctk.CTkFrame(
+            self.overlay,
+            fg_color=COR_CARD,
+            border_color=COR_BORDA,
+            border_width=1,
+            corner_radius=12
+        )
+        container.grid(row=0, column=0)
+
+        ctk.CTkLabel(
+            container,
+            text="Carregando dados...",
+            font=("Segoe UI", 18, "bold"),
+            text_color=COR_TEXTO
+        ).grid(row=0, column=0, padx=50, pady=(35, 15))
+
+        self.loading_progress = ctk.CTkProgressBar(
+            container,
+            mode="indeterminate",
+            width=280,
+            height=6,
+            corner_radius=3
+        )
+        self.loading_progress.grid(row=1, column=0, padx=50, pady=(0, 35))
+        self.loading_progress.start()
+
+    def _desabilitar_durante_carregamento(self):
+        self.combo_criterio.configure(state="disabled")
+        self.combo_criterio2.configure(state="disabled")
+        self.combo_tipo.configure(state="disabled")
+        self.entry_limite.configure(state="disabled")
+        self.switch_modo.configure(state="disabled")
+        self.switch_baixas.configure(state="disabled")
+        self.botao_aplicar.configure(state="disabled", text="CARREGANDO...")
+        self.botao_visao_geral.configure(state="disabled")
+
+    def _habilitar_apos_carregamento(self):
+        self.combo_criterio.configure(state="readonly")
+        self.combo_criterio2.configure(state="readonly")
+        self.combo_tipo.configure(state="readonly")
+        self.entry_limite.configure(state="normal")
+        self.switch_modo.configure(state="normal")
+        self.switch_baixas.configure(state="normal")
+        self.botao_aplicar.configure(state="normal", text="\U0001F50D  APLICAR")
+        self.botao_visao_geral.configure(state="normal")
 
     def _iniciar_carregamento(self):
         self.rodape.atualizar("Carregando dados...")
         self.rodape.mostrar_progresso()
+        self._desabilitar_durante_carregamento()
         threading.Thread(target=self._carregar_dados, daemon=True).start()
 
     def _carregar_dados(self):
@@ -89,7 +157,10 @@ class TelaVisualizacaoEstoque(ctk.CTkFrame):
             self.after(0, lambda: self._erro(str(e)))
 
     def _pos_carregamento(self, tipos):
+        self.overlay.grid_forget()
+        self.loading_progress.stop()
         self.rodape.esconder_progresso()
+        self._habilitar_apos_carregamento()
         self.combo_tipo.configure(values=tipos)
         if tipos:
             self.combo_tipo.set(tipos[0])
@@ -100,7 +171,11 @@ class TelaVisualizacaoEstoque(ctk.CTkFrame):
         self.rodape.atualizar("Pronto")
 
     def _erro(self, erro):
+        self.overlay.grid_forget()
+        self.loading_progress.stop()
         self.rodape.esconder_progresso()
+        self._habilitar_apos_carregamento()
+        self.botao_importar.configure(state="normal")
         self.rodape.atualizar(f"Erro: {erro}")
 
     def _criar_filtros(self):
@@ -110,9 +185,9 @@ class TelaVisualizacaoEstoque(ctk.CTkFrame):
 
         linha = ctk.CTkFrame(frame_filtros, fg_color=COR_CARD, border_color=COR_BORDA, border_width=1, corner_radius=8)
         linha.grid(row=0, column=0, sticky="ew", padx=0, pady=0)
-        for i in range(9):
+        for i in range(11):
             linha.grid_columnconfigure(i, weight=0)
-        linha.grid_columnconfigure(8, weight=1)
+        linha.grid_columnconfigure(10, weight=1)
 
         pad_x = (15, 5)
         pad_y = 13
@@ -163,7 +238,7 @@ class TelaVisualizacaoEstoque(ctk.CTkFrame):
             width=170,
             state="readonly"
         )
-        self.combo_criterio2.set("Nenhum")
+        self.combo_criterio2.set("Primeira Contagem")
         self.combo_criterio2.grid(row=0, column=col, padx=(0, 10), pady=pad_y, sticky="w")
         col += 1
 
@@ -214,8 +289,23 @@ class TelaVisualizacaoEstoque(ctk.CTkFrame):
             offvalue=False,
             switch_width=36
         )
-        self.switch_modo.select()
+        self.switch_modo.deselect()
         self.switch_modo.grid(row=0, column=col, padx=(0, 10), pady=pad_y, sticky="w")
+        col += 1
+
+        self.switch_baixas = ctk.CTkSwitch(
+            linha,
+            text="Baixas p/ final",
+            font=("Segoe UI", 12),
+            progress_color=COR_PRIMARIA,
+            button_color=COR_PRIMARIA,
+            button_hover_color=COR_TEXTO_SECUNDARIO,
+            onvalue=True,
+            offvalue=False,
+            switch_width=36
+        )
+        self.switch_baixas.deselect()
+        self.switch_baixas.grid(row=0, column=col, padx=(0, 10), pady=pad_y, sticky="w")
         col += 1
 
         self.botao_aplicar = ctk.CTkButton(
@@ -343,7 +433,7 @@ class TelaVisualizacaoEstoque(ctk.CTkFrame):
 
         barra = ctk.CTkFrame(frame, fg_color=COR_CARD, border_color=COR_BORDA, border_width=1, corner_radius=8)
         barra.grid(row=0, column=0, sticky="ew")
-        barra.grid_columnconfigure(4, weight=1)
+        barra.grid_columnconfigure(5, weight=1)
 
         self.label_totais = ctk.CTkLabel(
             barra,
@@ -383,6 +473,21 @@ class TelaVisualizacaoEstoque(ctk.CTkFrame):
         )
         self.botao_ver_documento.grid(row=0, column=2, padx=(0, 10), pady=13, sticky="e")
 
+        self.botao_visao_geral = ctk.CTkButton(
+            barra,
+            text="\U0001F441  Vis\u00e3o Geral",
+            font=("Segoe UI", 13),
+            command=self._abrir_visao_geral,
+            fg_color=COR_PRIMARIA,
+            hover_color=COR_TEXTO_SECUNDARIO,
+            text_color=COR_TEXTO_BRANCO,
+            state="normal",
+            height=38,
+            width=150,
+            corner_radius=8
+        )
+        self.botao_visao_geral.grid(row=0, column=3, padx=(0, 10), pady=13, sticky="e")
+
         self.botao_importar = ctk.CTkButton(
             barra,
             text="\U0001F4E5  Atualizar Dados",
@@ -396,7 +501,7 @@ class TelaVisualizacaoEstoque(ctk.CTkFrame):
             width=170,
             corner_radius=8
         )
-        self.botao_importar.grid(row=0, column=3, padx=(0, 15), pady=13, sticky="e")
+        self.botao_importar.grid(row=0, column=4, padx=(0, 15), pady=13, sticky="e")
 
     # --- Filtros / Consulta ---
 
@@ -486,6 +591,26 @@ class TelaVisualizacaoEstoque(ctk.CTkFrame):
         except ValueError:
             limite = 100
         modo_sem_maquina = self.switch_modo.get()
+        baixas_por_ultimo = self.switch_baixas.get()
+
+        parametros = {
+            "criterio": criterio,
+            "criterio_secundario": criterio_sec,
+            "tipo_deposito": tipo,
+            "limite_posicoes": limite,
+            "modo_sem_maquina": modo_sem_maquina,
+            "baixas_por_ultimo": baixas_por_ultimo,
+        }
+
+        if self.controller.parametros_iguais_ultima_geracao(parametros):
+            if not messagebox.askyesno(
+                "Documento j\u00e1 gerado",
+                "Um documento com os mesmos par\u00e2metros j\u00e1 foi gerado "
+                "nesta sess\u00e3o.\n\n"
+                "Deseja gerar novamente assim mesmo?\n"
+                "O arquivo anterior ser\u00e1 sobrescrito."
+            ):
+                return
 
         self.botao_gerar.configure(state="disabled", text="GERANDO...")
         self.rodape.atualizar("Gerando documento...")
@@ -493,18 +618,19 @@ class TelaVisualizacaoEstoque(ctk.CTkFrame):
 
         threading.Thread(
             target=self._executar_geracao,
-            args=(criterio, criterio_sec, tipo, limite, modo_sem_maquina),
+            args=(criterio, criterio_sec, tipo, limite, modo_sem_maquina, baixas_por_ultimo),
             daemon=True
         ).start()
 
-    def _executar_geracao(self, criterio, criterio_sec, tipo, limite, modo_sem_maquina):
+    def _executar_geracao(self, criterio, criterio_sec, tipo, limite, modo_sem_maquina, baixas_por_ultimo):
         try:
             resultado = self.controller.gerar(
                 criterio=criterio,
                 tipo_deposito=tipo,
                 limite_posicoes=limite,
                 modo_sem_maquina=modo_sem_maquina,
-                criterio_secundario=criterio_sec
+                criterio_secundario=criterio_sec,
+                baixas_por_ultimo=baixas_por_ultimo
             )
             self.after(0, lambda: self._pos_geracao(resultado))
         except Exception as e:
@@ -535,6 +661,15 @@ class TelaVisualizacaoEstoque(ctk.CTkFrame):
         self.botao_gerar.configure(state="normal", text="\u25B6  GERAR DOCUMENTO")
         self.rodape.atualizar(f"Erro: {erro}")
         messagebox.showerror("Erro", f"Erro ao gerar documento:\n{erro}")
+
+    # --- Visão Geral ---
+
+    def _abrir_visao_geral(self):
+        if self.controller.estoque is None:
+            messagebox.showwarning("Aguarde", "Os dados ainda est\u00e3o sendo carregados.")
+            return
+        if self.ao_exibir_visao_geral:
+            self.ao_exibir_visao_geral()
 
     # --- Importação de Dados ---
 
