@@ -29,6 +29,7 @@ from regras.filtros import (
 from regras.bloqueios import (
     remover_lotes_em_ordem,
     remover_posicoes_330_em_ordem,
+    remover_lotes_recentes,
     remover_lotes_acima_nivel_1
 )
 
@@ -83,6 +84,7 @@ def preparar_inventario():
     estoque = preparar_posicoes(estoque)
     estoque = remover_lotes_em_ordem(estoque)
     estoque = remover_posicoes_330_em_ordem(estoque)
+    estoque = remover_lotes_recentes(estoque)
 
     resumo = resumir_ultima_contagem(ymm141)
 
@@ -111,7 +113,8 @@ def executar_inventario(
     numero_documento="",
     modo_sem_maquina=True,
     criterio_secundario=None,
-    descricao_excluir=None
+    descricao_excluir=None,
+    baixas_por_ultimo=False
 ):
 
     print("\nANTES DO FILTRO:", len(estoque))
@@ -178,7 +181,8 @@ def executar_inventario(
     print("ESTOQUE SELECIONADO:", len(estoque_selecionado))
 
     estoque_selecionado = ordenar_posicoes(
-        estoque_selecionado
+        estoque_selecionado,
+        baixas_por_ultimo=baixas_por_ultimo
     )
 
     exportar_documento(

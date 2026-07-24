@@ -128,6 +128,10 @@ class TabelaDados(ctk.CTkFrame):
             if valor is True or str(valor).lower() == "true":
                 return "Sim"
             return "N\u00e3o"
+        elif formato == "numero":
+            if valor is None or (isinstance(valor, float) and valor != valor):
+                return "0"
+            return f"{int(valor):,}".replace(",", ".")
         elif formato == "inteiro":
             if valor is None or (isinstance(valor, float) and valor != valor):
                 return "0"

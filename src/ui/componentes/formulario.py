@@ -95,7 +95,7 @@ class Formulario(ctk.CTkFrame):
             onvalue=True,
             offvalue=False
         )
-        self.switch_modo.select()
+        self.switch_modo.deselect()
         self.switch_modo.grid(row=0, column=0, sticky="w")
 
     def criar_botao(self):

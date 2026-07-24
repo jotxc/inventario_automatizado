@@ -93,6 +93,36 @@ def remover_posicoes_330_em_ordem(estoque):
 
     return estoque
 
+#Bloquear lotes cuja data de entrada mais antiga é inferior a N dias
+
+def remover_lotes_recentes(estoque, dias_minimos=60):
+
+    entrada = (
+        estoque.groupby(["lote", "tipo_deposito"])["data_entrada"]
+        .min()
+        .reset_index()
+    )
+
+    hoje = pd.Timestamp.now().normalize()
+
+    entrada["bloquear_recente"] = (
+        entrada["data_entrada"].notna() &
+        ((hoje - entrada["data_entrada"]).dt.days < dias_minimos)
+    )
+
+    estoque = estoque.merge(
+        entrada[["lote", "tipo_deposito", "bloquear_recente"]],
+        on=["lote", "tipo_deposito"], how="left"
+    )
+
+    estoque["bloquear_recente"] = estoque["bloquear_recente"].fillna(False)
+
+    estoque = estoque[~estoque["bloquear_recente"]]
+
+    estoque = estoque.drop(columns=["bloquear_recente"])
+
+    return estoque
+
 #Excluir lotes que possuam pelo menos um registro acima do nível 100.
 
 def remover_lotes_acima_nivel_1(estoque):
