@@ -18,9 +18,10 @@ from ui.componentes.rodape import Rodape
 
 class TelaPrincipal(ctk.CTkFrame):
 
-    def __init__(self, master):
+    def __init__(self, master, ao_visualizar=None):
         super().__init__(master, fg_color=COR_FUNDO)
         self.controller = InventarioController()
+        self.ao_visualizar = ao_visualizar
 
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(1, weight=1)
@@ -40,7 +41,7 @@ class TelaPrincipal(ctk.CTkFrame):
         self.resumo = Resumo(frame_meio)
         self.resumo.grid(row=0, column=1, sticky="new", padx=(10, 0))
 
-        self.barra_acoes = BarraAcoes(self, ao_importar=self.importar_dados)
+        self.barra_acoes = BarraAcoes(self, ao_importar=self.importar_dados, ao_visualizar=self._abrir_visualizacao)
         self.barra_acoes.grid(row=2, column=0, sticky="ew", padx=40, pady=(0, 10))
         self.barra_acoes.botao_documento.configure(command=self.abrir_documento)
         self.barra_acoes.botao_historico.configure(command=self.abrir_historico)
@@ -68,6 +69,7 @@ class TelaPrincipal(ctk.CTkFrame):
         self.formulario.combo_tipo.configure(values=tipos)
         if tipos:
             self.formulario.combo_tipo.set(tipos[0])
+        self.barra_acoes.botao_visualizar.configure(state="normal")
         self.rodape.atualizar("Pronto")
 
     def gerar_documento(self):
@@ -172,6 +174,7 @@ class TelaPrincipal(ctk.CTkFrame):
         self.rodape.esconder_progresso()
         self.barra_acoes.botao_importar.configure(state="normal")
         self.barra_acoes.botao_documento.configure(state="disabled")
+        self.barra_acoes.botao_visualizar.configure(state="normal")
         self.resumo.limpar()
         self.formulario.combo_tipo.configure(values=tipos)
         if tipos:
@@ -189,6 +192,17 @@ class TelaPrincipal(ctk.CTkFrame):
             messagebox.showwarning("Histórico", "Histórico não encontrado.")
             return
         self._abrir_arquivo(ARQUIVO_HISTORICO)
+
+    def _abrir_visualizacao(self):
+        if self.controller.estoque is None:
+            messagebox.showwarning("Aguarde", "Os dados ainda est\u00e3o sendo carregados.")
+            return
+        if self.ao_visualizar:
+            self.ao_visualizar()
+
+    def atualizar_indicador_exclusoes(self):
+        quantos = len(self.controller.materiais_excluir)
+        self.rodape.atualizar_exclusao(quantos)
 
     @staticmethod
     def _abrir_arquivo(caminho):

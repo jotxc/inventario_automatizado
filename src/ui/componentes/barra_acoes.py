@@ -4,11 +4,12 @@ import customtkinter as ctk
 
 class BarraAcoes(ctk.CTkFrame):
 
-    def __init__(self, master, ao_importar=None, **kwargs):
+    def __init__(self, master, ao_importar=None, ao_visualizar=None, **kwargs):
         super().__init__(master, **kwargs)
         self.ao_importar = ao_importar
+        self.ao_visualizar = ao_visualizar
 
-        self.grid_columnconfigure(3, weight=1)
+        self.grid_columnconfigure(4, weight=1)
 
         self.botao_documento = ctk.CTkButton(
             self,
@@ -41,6 +42,23 @@ class BarraAcoes(ctk.CTkFrame):
         )
         self.botao_historico.grid(row=0, column=1, padx=5, pady=15)
 
+        self.botao_visualizar = ctk.CTkButton(
+            self,
+            text="\U0001F4CB  Visualizar/Editar Documento",
+            font=("Segoe UI", 13),
+            fg_color=COR_TEXTO_BRANCO,
+            text_color=COR_PRIMARIA,
+            hover_color=COR_PRIMARIA,
+            border_color=COR_PRIMARIA,
+            border_width=2,
+            state="disabled",
+            width=190,
+            height=38,
+            corner_radius=8,
+            command=self._ao_visualizar
+        )
+        self.botao_visualizar.grid(row=0, column=2, padx=5, pady=15)
+
         self.botao_importar = ctk.CTkButton(
             self,
             text="\U0001F4E5  Atualizar Dados",
@@ -55,8 +73,12 @@ class BarraAcoes(ctk.CTkFrame):
             corner_radius=8,
             command=self._ao_importar
         )
-        self.botao_importar.grid(row=0, column=2, padx=5, pady=15)
+        self.botao_importar.grid(row=0, column=3, padx=5, pady=15)
 
     def _ao_importar(self):
         if self.ao_importar:
             self.ao_importar()
+
+    def _ao_visualizar(self):
+        if self.ao_visualizar:
+            self.ao_visualizar()

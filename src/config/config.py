@@ -3,7 +3,8 @@ import os
 CRITERIOS_DISPONIVEIS = {
     1: "primeira_contagem",
     2: "dias",
-    3: "valor"
+    3: "valor",
+    4: "posicoes"
 }
 
 LIMITE_PADRAO_POSICOES = 100
@@ -13,7 +14,8 @@ MODO_SEM_MAQUINA = True
 CRITERIOS_UI = {
     "Primeira Contagem": "primeira_contagem",
     "Dias sem Contagem": "dias",
-    "Valor do Lote": "valor"
+    "Valor do Lote": "valor",
+    "Menos Posições": "posicoes"
 }
 
 PASTA_RAIZ = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))

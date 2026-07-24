@@ -35,7 +35,8 @@ class Formulario(ctk.CTkFrame):
             values=[
                 "Primeira Contagem",
                 "Dias sem Contagem",
-                "Valor do Lote"
+                "Valor do Lote",
+                "Menos Posições"
             ],
             fg_color=COR_TEXTO_BRANCO,
             text_color=COR_TEXTO,

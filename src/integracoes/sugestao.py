@@ -8,6 +8,7 @@ def criar_sugestao_inventario(estoque):
 
             [
                 "material",
+                "descricao_material",
                 "lote",
                 "tipo_deposito"
             ],
