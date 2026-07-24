@@ -48,7 +48,7 @@ from integracoes.sugestao import (
     identificar_primeira_contagem
 )
 
-from regras.priorizacao import priorizar_lotes
+from regras.priorizacao import priorizar_lotes, priorizar_combinado
 from regras.selecao import selecionar_lotes, selecionar_posicoes
 from regras.ordenacao import ordenar_posicoes
 
@@ -109,7 +109,9 @@ def executar_inventario(
     limite_posicoes,
     tipo_deposito,
     numero_documento="",
-    modo_sem_maquina=True
+    modo_sem_maquina=True,
+    criterio_secundario=None,
+    descricao_excluir=None
 ):
 
     print("\nANTES DO FILTRO:", len(estoque))
@@ -139,10 +141,25 @@ def executar_inventario(
     sugestao = remover_lotes_historico(sugestao, historico)
     print("APÓS REMOVER HISTÓRICO:", len(sugestao))
 
-    sugestao = priorizar_lotes(
-        sugestao,
-        criterio=criterio
-    )
+    if descricao_excluir:
+        sugestao = sugestao[~sugestao["descricao_material"].isin(descricao_excluir)]
+        print("APÓS EXCLUIR DESCRIÇÕES:", len(sugestao))
+
+    if criterio == "primeira_contagem" or criterio_secundario == "primeira_contagem":
+        sugestao = sugestao[sugestao["nunca_contado"] == True]
+        print("APÓS FILTRO PRIMEIRA CONTAGEM:", len(sugestao))
+
+    if criterio_secundario:
+        sugestao = priorizar_combinado(
+            sugestao,
+            criterio_primario=criterio,
+            criterio_secundario=criterio_secundario
+        )
+    else:
+        sugestao = priorizar_lotes(
+            sugestao,
+            criterio=criterio
+        )
 
     print("APÓS PRIORIZAÇÃO:", len(sugestao))
 

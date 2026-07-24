@@ -52,3 +52,25 @@ def priorizar_lotes(sugestao, criterio):
     }
 
     return criterios[criterio](sugestao)
+
+
+CRITERIO_SORT_MAP = {
+    "valor":         (["valor_lote"],             [False]),
+    "dias":          (["dias_sem_contagem"],       [False]),
+    "posicoes":      (["quantidade_posicoes"],     [True]),
+    "primeira_contagem": (["nunca_contado", "dias_sem_contagem"], [False, False]),
+}
+
+
+def priorizar_combinado(sugestao, criterio_primario, criterio_secundario=None):
+
+    cols, asc = CRITERIO_SORT_MAP[criterio_primario]
+
+    if criterio_secundario:
+        cols2, asc2 = CRITERIO_SORT_MAP[criterio_secundario]
+        for c, a in zip(cols2, asc2):
+            if c not in cols:
+                cols = cols + [c]
+                asc = asc + [a]
+
+    return sugestao.sort_values(cols, ascending=asc)

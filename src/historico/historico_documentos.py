@@ -90,16 +90,33 @@ def remover_lotes_historico(
     if historico.empty:
         return sugestao
 
-    lotes_bloqueados = (
-        historico["lote"]
-        .astype(str)
-        .unique()
+    historico = (
+        historico[["lote", "tipo_deposito"]]
+        .drop_duplicates()
+        .copy()
+    )
+
+    historico["lote"] = historico["lote"].astype(str)
+    historico["tipo_deposito"] = historico["tipo_deposito"].astype(str)
+
+    historico["ja_contado"] = True
+
+    sugestao = sugestao.copy()
+    sugestao["lote"] = sugestao["lote"].astype(str)
+    sugestao["tipo_deposito"] = sugestao["tipo_deposito"].astype(str)
+
+    sugestao = sugestao.merge(
+        historico,
+        on=["lote", "tipo_deposito"],
+        how="left"
     )
 
     sugestao = sugestao[
-        ~sugestao["lote"].isin(
-            lotes_bloqueados
-        )
+        sugestao["ja_contado"].isna()
     ]
+
+    sugestao = sugestao.drop(
+        columns=["ja_contado"]
+    )
 
     return sugestao

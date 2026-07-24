@@ -31,8 +31,11 @@ def remover_lotes_em_ordem(estoque):
         how="left"
     )
 
-    print(estoque["possui_ordem"].dtype)
-    print(estoque["possui_ordem"].value_counts(dropna=False))
+    estoque["possui_ordem"] = (
+        estoque["possui_ordem"]
+        .fillna(False)
+        .astype(bool)
+    )
 
     estoque = estoque[ ~estoque["possui_ordem"] ]
 

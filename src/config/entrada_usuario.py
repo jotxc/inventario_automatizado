@@ -13,6 +13,7 @@ def obter_criterio():
     print("1 - Primeira contagem")
     print("2 - Dias sem contagem")
     print("3 - Valor do lote")
+    print("4 - Menos posições")
 
     escolha = int(input("\nEscolha: "))
 

@@ -1,3 +1,5 @@
+import re
+
 import pandas as pd
 
 
@@ -66,6 +68,9 @@ def extrair_numero(posicao):
         return None
 
     if eh_posicao_especial(posicao):
+        match = re.search(r'W(\d+)', posicao)
+        if match:
+            return -int(match.group(1))
         return None
 
     codigo = posicao[3:]
