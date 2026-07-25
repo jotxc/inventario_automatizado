@@ -1,4 +1,4 @@
-from ui.tema import COR_PRIMARIA, COR_TEXTO_BRANCO, COR_TEXTO_SECUNDARIO
+from ui.tema import COR_PRIMARIA, COR_PRIMARIA_HOVER, COR_TEXTO_BRANCO, COR_TEXTO_SECUNDARIO
 import customtkinter as ctk
 
 
@@ -65,7 +65,7 @@ class BarraAcoes(ctk.CTkFrame):
             font=("Segoe UI", 13),
             fg_color=COR_PRIMARIA,
             text_color=COR_TEXTO_BRANCO,
-            hover_color=COR_TEXTO_SECUNDARIO,
+            hover_color=COR_PRIMARIA_HOVER,
             border_color=COR_PRIMARIA,
             border_width=2,
             width=190,

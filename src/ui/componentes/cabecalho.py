@@ -15,15 +15,15 @@ class Cabecalho(ctk.CTkFrame):
         self.label_titulo = ctk.CTkLabel(
             self,
             text=f"\U0001F4E6  {titulo}",
-            font=("Segoe UI", 28, "bold"),
+            font=("Segoe UI", 20, "bold"),
             text_color=COR_TEXTO_BRANCO
         )
-        self.label_titulo.pack(pady=(28, 2))
+        self.label_titulo.pack(pady=(15, 2))
 
         self.label_subtitulo = ctk.CTkLabel(
             self,
             text=subtitulo,
-            font=("Segoe UI", 14),
+            font=("Segoe UI", 12),
             text_color=COR_TEXTO_BRANCO
         )
-        self.label_subtitulo.pack(pady=(0, 28))
+        self.label_subtitulo.pack(pady=(0, 15))

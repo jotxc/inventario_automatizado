@@ -110,6 +110,12 @@ def remover_lotes_recentes(estoque, dias_minimos=60):
         ((hoje - entrada["data_entrada"]).dt.days < dias_minimos)
     )
 
+    print(f"[DEBUG] remover_lotes_recentes: {len(entrada)} lotes avaliados")
+    print(f"[DEBUG]   bloqueados: {entrada['bloquear_recente'].sum()}")
+    print(f"[DEBUG]   datas nulas: {entrada['data_entrada'].isna().sum()}")
+    if len(entrada) > 0:
+        print(f"[DEBUG]   exemplo data_entrada: {entrada['data_entrada'].iloc[0]}")
+
     estoque = estoque.merge(
         entrada[["lote", "tipo_deposito", "bloquear_recente"]],
         on=["lote", "tipo_deposito"], how="left"

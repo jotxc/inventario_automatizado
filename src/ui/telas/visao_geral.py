@@ -3,7 +3,7 @@ import pandas as pd
 import customtkinter as ctk
 
 from ui.tema import (
-    COR_PRIMARIA, COR_TEXTO, COR_TEXTO_BRANCO, COR_TEXTO_SECUNDARIO,
+    COR_PRIMARIA, COR_PRIMARIA_HOVER, COR_TEXTO, COR_TEXTO_BRANCO, COR_TEXTO_SECUNDARIO,
     COR_FUNDO, COR_CARD, COR_BORDA, COR_SUCESSO, COR_AVISO, COR_ERRO
 )
 from ui.componentes.cabecalho import Cabecalho
@@ -219,7 +219,7 @@ class TelaVisaoGeral(ctk.CTkFrame):
             font=("Segoe UI", 13),
             command=self._carregar_dados,
             fg_color=COR_PRIMARIA,
-            hover_color=COR_TEXTO_SECUNDARIO,
+            hover_color=COR_PRIMARIA_HOVER,
             text_color=COR_TEXTO_BRANCO,
             height=38,
             width=130,
@@ -258,7 +258,8 @@ class TelaVisaoGeral(ctk.CTkFrame):
             visao = self.controller.obter_visao_geral()
             self.after(0, lambda: self._pos_carga(visao))
         except Exception as e:
-            self.after(0, lambda: self._erro_carga(str(e)))
+            erro = str(e)
+            self.after(0, lambda: self._erro_carga(erro))
 
     def _pos_carga(self, visao):
         self.label_loading.configure(text="")
