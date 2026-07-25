@@ -26,6 +26,7 @@ class TabelaDados(ctk.CTkFrame):
 
         self.dados_originais = None
         self.coluna_ordenada = None
+        self.coluna_ativa = None
 
         self.grid_rowconfigure(0, weight=1)
         self.grid_columnconfigure(0, weight=1)
@@ -76,8 +77,15 @@ class TabelaDados(ctk.CTkFrame):
             columns=self.colunas_chave,
             show="headings",
             style="Tabela.Treeview",
-            selectmode="browse"
+            selectmode="extended"
         )
+
+        self.tree.bind("<Button-1>", self._definir_coluna_ativa, add="+")
+        self.tree.bind("<B1-Motion>", self._estender_selecao, add="+")
+        self.tree.bind("<Control-a>", self._selecionar_tudo)
+        self.tree.bind("<Control-A>", self._selecionar_tudo)
+        self.after(0, lambda: self.winfo_toplevel().bind("<Control-c>", self._copiar_selecao))
+        self.after(0, lambda: self.winfo_toplevel().bind("<Control-C>", self._copiar_selecao))
 
         for c in self.colunas:
             self.tree.heading(
@@ -149,6 +157,7 @@ class TabelaDados(ctk.CTkFrame):
 
         self.dados_originais = dataframe.copy() if dataframe is not None else None
         self.coluna_ordenada = None
+        self.coluna_ativa = None
 
         if dataframe is None or dataframe.empty:
             return
@@ -176,9 +185,8 @@ class TabelaDados(ctk.CTkFrame):
                 self.tree.heading(c["chave"], text=c["rotulo"])
             return
 
-        self.coluna_ordenada = coluna_chave
-
-        dados_ordenados = self.dados_originais.copy()
+        dados_originais = self.dados_originais
+        dados_ordenados = dados_originais.copy()
 
         formato = self.colunas_formato.get(coluna_chave)
         if formato == "moeda":
@@ -189,6 +197,8 @@ class TabelaDados(ctk.CTkFrame):
             dados_ordenados = dados_ordenados.sort_values(coluna_chave, ascending=False, na_position="last")
 
         self.carregar(dados_ordenados)
+        self.dados_originais = dados_originais
+        self.coluna_ordenada = coluna_chave
 
         for c in self.colunas:
             texto = c["rotulo"]
@@ -208,4 +218,55 @@ class TabelaDados(ctk.CTkFrame):
         for item in self.tree.get_children():
             self.tree.delete(item)
         self.dados_originais = None
+        self.coluna_ativa = None
         self.esconder_mensagem()
+
+    def _definir_coluna_ativa(self, event):
+        region = self.tree.identify_region(event.x, event.y)
+        if region != "cell":
+            return
+        col_id = self.tree.identify_column(event.x)
+        if not col_id:
+            return
+        try:
+            col_index = int(col_id.replace("#", "")) - 1
+            if 0 <= col_index < len(self.colunas_chave):
+                self.coluna_ativa = self.colunas_chave[col_index]
+        except ValueError:
+            pass
+
+    def _estender_selecao(self, event):
+        row_id = self.tree.identify_row(event.y)
+        if not row_id:
+            return
+        items = self.tree.get_children()
+        if row_id not in items:
+            return
+        focus_id = self.tree.focus()
+        if not focus_id or focus_id not in items:
+            self.tree.selection_set([row_id])
+            return
+        start = min(items.index(focus_id), items.index(row_id))
+        end = max(items.index(focus_id), items.index(row_id))
+        self.tree.selection_set(list(items[start:end + 1]))
+
+    def _selecionar_tudo(self, event):
+        items = self.tree.get_children()
+        if items:
+            self.tree.selection_set(items)
+        return "break"
+
+    def _copiar_selecao(self, event):
+        items = self.tree.selection()
+        if not items or not self.coluna_ativa:
+            return
+        col_index = self.colunas_chave.index(self.coluna_ativa)
+        linhas = []
+        for item in items:
+            valores = self.tree.item(item, "values")
+            if col_index < len(valores):
+                linhas.append(str(valores[col_index]))
+        texto = "\n".join(linhas)
+        if texto:
+            self.winfo_toplevel().clipboard_clear()
+            self.winfo_toplevel().clipboard_append(texto)

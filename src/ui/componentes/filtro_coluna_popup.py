@@ -1,6 +1,6 @@
 import customtkinter as ctk
 from ui.tema import (
-    COR_PRIMARIA, COR_TEXTO, COR_TEXTO_BRANCO, COR_TEXTO_SECUNDARIO,
+    COR_PRIMARIA, COR_PRIMARIA_HOVER, COR_TEXTO, COR_TEXTO_BRANCO, COR_TEXTO_SECUNDARIO,
     COR_FUNDO, COR_CARD, COR_BORDA
 )
 
@@ -86,7 +86,7 @@ class FiltroColunaPopup(ctk.CTkToplevel):
         self.botao_aplicar = ctk.CTkButton(
             frame_rodape, text="Aplicar",
             font=("Segoe UI", 13, "bold"), command=self._aplicar,
-            fg_color=COR_PRIMARIA, hover_color=COR_TEXTO_SECUNDARIO,
+            fg_color=COR_PRIMARIA, hover_color=COR_PRIMARIA_HOVER,
             text_color=COR_TEXTO_BRANCO, height=35, corner_radius=8
         )
         self.botao_aplicar.grid(row=0, column=0, padx=(0, 5), pady=0, sticky="ew")
@@ -123,7 +123,7 @@ class FiltroColunaPopup(ctk.CTkToplevel):
             cb = ctk.CTkCheckBox(
                 parent, text=str(valor), variable=var,
                 font=("Segoe UI", 12), text_color=COR_TEXTO,
-                fg_color=COR_PRIMARIA, hover_color=COR_TEXTO_SECUNDARIO,
+            fg_color=COR_PRIMARIA, hover_color=COR_PRIMARIA_HOVER,
                 border_color=COR_TEXTO_SECUNDARIO, corner_radius=4,
                 checkbox_width=20, checkbox_height=20
             )

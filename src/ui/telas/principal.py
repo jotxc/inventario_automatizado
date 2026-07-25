@@ -62,7 +62,8 @@ class TelaPrincipal(ctk.CTkFrame):
             tipos = self.controller.carregar()
             self.after(0, lambda: self._pos_carregamento(tipos))
         except Exception as e:
-            self.after(0, lambda: self._erro(str(e)))
+            erro = str(e)
+            self.after(0, lambda: self._erro(erro))
 
     def _pos_carregamento(self, tipos):
         self.rodape.esconder_progresso()
@@ -101,7 +102,8 @@ class TelaPrincipal(ctk.CTkFrame):
             )
             self.after(0, lambda: self._pos_geracao(criterio_label, resultado))
         except Exception as e:
-            self.after(0, lambda: self._erro_geracao(str(e)))
+            erro = str(e)
+            self.after(0, lambda: self._erro_geracao(erro))
 
     def _pos_geracao(self, criterio_label, resultado):
         self.rodape.esconder_progresso()
@@ -168,7 +170,8 @@ class TelaPrincipal(ctk.CTkFrame):
             tipos = self.controller.carregar()
             self.after(0, lambda: self._pos_importacao(tipos))
         except Exception as e:
-            self.after(0, lambda: self._erro(str(e)))
+            erro = str(e)
+            self.after(0, lambda: self._erro(erro))
 
     def _pos_importacao(self, tipos):
         self.rodape.esconder_progresso()

@@ -74,7 +74,7 @@ class InventarioController:
 
         return visao
 
-    def _excluir_descricoes(self, dataframe):
+    def aplicar_exclusao(self, dataframe):
         if not self.descricao_excluir or dataframe is None or dataframe.empty:
             return dataframe
         return dataframe[
@@ -141,15 +141,10 @@ class InventarioController:
 
         self.sugestao_base = sugestao.copy()
 
-        sugestao = self._excluir_descricoes(sugestao)
-
         if criterio == "primeira_contagem" or criterio_secundario == "primeira_contagem":
             sugestao = sugestao[sugestao["nunca_contado"] == True]
 
-        if criterio_secundario:
-            sugestao = priorizar_combinado(sugestao, criterio, criterio_secundario)
-        else:
-            sugestao = priorizar_lotes(sugestao, criterio=criterio)
+        sugestao = priorizar_combinado(sugestao, criterio, criterio_secundario) if criterio_secundario else priorizar_lotes(sugestao, criterio=criterio)
 
         sugestao = selecionar_lotes(sugestao, limite_posicoes=limite_posicoes)
 

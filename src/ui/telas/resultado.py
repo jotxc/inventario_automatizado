@@ -6,7 +6,7 @@ from tkinter import messagebox
 
 from config.config import ARQUIVO_SAIDA, ARQUIVO_HISTORICO
 from ui.tema import (
-    COR_PRIMARIA, COR_TEXTO, COR_TEXTO_BRANCO, COR_TEXTO_SECUNDARIO,
+    COR_PRIMARIA, COR_PRIMARIA_HOVER, COR_TEXTO, COR_TEXTO_BRANCO, COR_TEXTO_SECUNDARIO,
     COR_FUNDO, COR_CARD, COR_BORDA
 )
 from ui.componentes.cabecalho import Cabecalho
@@ -77,7 +77,7 @@ class TelaResultado(ctk.CTkFrame):
             font=("Segoe UI", 14, "bold"),
             command=self.abrir_documento,
             fg_color=COR_PRIMARIA,
-            hover_color=COR_TEXTO_SECUNDARIO,
+            hover_color=COR_PRIMARIA_HOVER,
             text_color=COR_TEXTO_BRANCO,
             height=45,
             width=200,
@@ -91,7 +91,7 @@ class TelaResultado(ctk.CTkFrame):
             font=("Segoe UI", 14, "bold"),
             command=self.abrir_historico,
             fg_color=COR_PRIMARIA,
-            hover_color=COR_TEXTO_SECUNDARIO,
+            hover_color=COR_PRIMARIA_HOVER,
             text_color=COR_TEXTO_BRANCO,
             height=45,
             width=200,
