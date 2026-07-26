@@ -63,7 +63,7 @@ from historico.historico_documentos import (
 )
 
 
-def preparar_inventario():
+def preparar_inventario(remover_lotes_ordem=True, remover_330_ordem=True):
 
     estoque = carregar_lx02()
     ymm141 = carregar_ymm141()
@@ -82,8 +82,10 @@ def preparar_inventario():
 
     estoque = remover_posicoes_controladas(estoque)
     estoque = preparar_posicoes(estoque)
-    estoque = remover_lotes_em_ordem(estoque)
-    estoque = remover_posicoes_330_em_ordem(estoque)
+    if remover_lotes_ordem:
+        estoque = remover_lotes_em_ordem(estoque)
+    if remover_330_ordem:
+        estoque = remover_posicoes_330_em_ordem(estoque)
     estoque = remover_lotes_recentes(estoque)
 
     resumo = resumir_ultima_contagem(ymm141)
@@ -192,7 +194,9 @@ def executar_inventario(
 
     historico = criar_historico_documento(
         estoque_selecionado,
-        numero_documento
+        numero_documento,
+        criterio=criterio,
+        sugestao=sugestao
     )
 
     salvar_historico_documento(
@@ -204,5 +208,7 @@ def executar_inventario(
         "tipo_deposito": tipo_deposito,
         "arquivo": "Documento_Inventario.xlsx",
         "sugestao": sugestao,
-        "estoque": estoque_selecionado
+        "estoque": estoque_selecionado,
+        "data_geracao": historico["data_geracao"].iloc[0],
+        "id_geracao": historico["id_geracao"].iloc[0]
     }
