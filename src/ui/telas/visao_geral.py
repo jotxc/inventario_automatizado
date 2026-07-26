@@ -28,6 +28,7 @@ class CartaoTipoDeposito(ctk.CTkFrame):
         total_lotes = int(dados["total_lotes"])
         lotes_nunca = int(dados["lotes_nunca_contados"])
         pct_primeira = dados["percentual_primeira_contagem"]
+        pct_contados = 100 - pct_primeira
         valor_total = dados["valor_pendente"]
         valor_prim = dados["valor_pendente_primeira_contagem"]
         media_dias = int(round(dados["media_dias_sem_contagem"])) if pd.notna(dados["media_dias_sem_contagem"]) else 0
@@ -35,14 +36,17 @@ class CartaoTipoDeposito(ctk.CTkFrame):
 
         if pct_primeira >= 60:
             cor_critica = COR_ERRO
+            texto_status = "Cr\u00edtico"
         elif pct_primeira >= 30:
             cor_critica = COR_AVISO
+            texto_status = "Aten\u00e7\u00e3o"
         else:
             cor_critica = COR_SUCESSO
+            texto_status = "OK"
 
         label_titulo = ctk.CTkLabel(
             self,
-            text=f"Tipo de Dep\u00f3sito: {tipo}",
+            text=f"Dep\u00f3sito Tipo {tipo}",
             font=("Segoe UI", 16, "bold"),
             text_color=COR_PRIMARIA,
             anchor="w"
@@ -50,126 +54,101 @@ class CartaoTipoDeposito(ctk.CTkFrame):
         label_titulo.grid(row=0, column=0, padx=20, pady=(18, 10), sticky="w")
 
         frame_barra = ctk.CTkFrame(self, fg_color="transparent")
-        frame_barra.grid(row=1, column=0, padx=20, pady=(0, 5), sticky="ew")
+        frame_barra.grid(row=1, column=0, padx=20, pady=(0, 2), sticky="ew")
         frame_barra.grid_columnconfigure(0, weight=1)
 
         barra = ctk.CTkProgressBar(
             frame_barra,
             width=200,
-            height=12,
-            corner_radius=6,
+            height=14,
+            corner_radius=7,
             fg_color=COR_BORDA,
-            progress_color=cor_critica
+            progress_color=COR_SUCESSO
         )
         barra.grid(row=0, column=0, sticky="ew")
-        barra.set(pct_primeira / 100)
+        barra.set(pct_contados / 100)
 
         label_pct = ctk.CTkLabel(
             frame_barra,
-            text=f"{pct_primeira:.0f}% 1\u00aa Contagem",
+            text=f"{pct_contados:.0f}% j\u00e1 contados",
             font=("Segoe UI", 12, "bold"),
-            text_color=cor_critica
+            text_color=COR_SUCESSO
         )
         label_pct.grid(row=0, column=1, padx=(10, 0))
 
+        label_status = ctk.CTkLabel(
+            self,
+            text=f"{texto_status} \u2014 {lotes_nunca} lote(s) n\u00e3o contado(s)",
+            font=("Segoe UI", 11, "bold"),
+            text_color=cor_critica,
+            anchor="w"
+        )
+        label_status.grid(row=2, column=0, padx=20, pady=(2, 12), sticky="w")
+
+        linha1 = ctk.CTkFrame(self, fg_color=COR_BORDA, height=1)
+        linha1.grid(row=3, column=0, padx=20, sticky="ew")
+
         frame_metricas = ctk.CTkFrame(self, fg_color="transparent")
-        frame_metricas.grid(row=2, column=0, padx=20, pady=(5, 18), sticky="ew")
-        frame_metricas.grid_columnconfigure(0, weight=1)
-        frame_metricas.grid_columnconfigure(1, weight=1)
+        frame_metricas.grid(row=4, column=0, padx=20, pady=(8, 8), sticky="ew")
 
-        metrica_esquerda = [
-            ("Lotes Eleg\u00edveis", str(total_lotes)),
-            ("Lotes Nunca Contados", str(lotes_nunca)),
-        ]
-        metrica_direita = [
-            ("M\u00e9dia Dias s/ Contagem", f"{media_dias} dias"),
-            ("M\u00e1x Dias s/ Contagem", f"{max_dias} dias"),
+        metricas = [
+            ("Total de lotes", str(total_lotes)),
+            ("Lotes n\u00e3o contados", str(lotes_nunca)),
+            ("Tempo m\u00e9dio parado", f"{media_dias} d"),
+            ("Lote mais antigo", f"{max_dias} d"),
         ]
 
-        for i, (rotulo, valor) in enumerate(metrica_esquerda):
-            frame_item = ctk.CTkFrame(frame_metricas, fg_color="transparent")
-            frame_item.grid(row=i, column=0, sticky="ew", pady=2)
-            frame_item.grid_columnconfigure(1, weight=1)
+        for rotulo, valor in metricas:
+            linha = ctk.CTkFrame(frame_metricas, fg_color="transparent")
+            linha.pack(fill="x", pady=1)
 
             ctk.CTkLabel(
-                frame_item,
-                text=rotulo,
+                linha,
+                text=f"{rotulo}:",
                 font=("Segoe UI", 11),
                 text_color=COR_TEXTO_SECUNDARIO,
                 anchor="w"
-            ).grid(row=0, column=0, sticky="w")
+            ).pack(side="left")
 
             ctk.CTkLabel(
-                frame_item,
+                linha,
                 text=valor,
                 font=("Segoe UI", 12, "bold"),
                 text_color=COR_TEXTO,
-                anchor="e"
-            ).grid(row=0, column=1, sticky="e")
-
-        for i, (rotulo, valor) in enumerate(metrica_direita):
-            frame_item = ctk.CTkFrame(frame_metricas, fg_color="transparent")
-            frame_item.grid(row=i, column=1, sticky="ew", pady=2)
-            frame_item.grid_columnconfigure(1, weight=1)
-
-            ctk.CTkLabel(
-                frame_item,
-                text=rotulo,
-                font=("Segoe UI", 11),
-                text_color=COR_TEXTO_SECUNDARIO,
                 anchor="w"
-            ).grid(row=0, column=0, sticky="w", padx=(20, 0))
+            ).pack(side="left", padx=(5, 0))
 
-            ctk.CTkLabel(
-                frame_item,
-                text=valor,
-                font=("Segoe UI", 12, "bold"),
-                text_color=COR_TEXTO,
-                anchor="e"
-            ).grid(row=0, column=1, sticky="e")
-
-        linha_valor = ctk.CTkFrame(self, fg_color=COR_BORDA, height=1)
-        linha_valor.grid(row=3, column=0, padx=20, sticky="ew")
+        linha2 = ctk.CTkFrame(self, fg_color=COR_BORDA, height=1)
+        linha2.grid(row=5, column=0, padx=20, sticky="ew")
 
         frame_valores = ctk.CTkFrame(self, fg_color="transparent")
-        frame_valores.grid(row=4, column=0, padx=20, pady=(10, 18), sticky="ew")
-        frame_valores.grid_columnconfigure(0, weight=1)
-        frame_valores.grid_columnconfigure(1, weight=1)
+        frame_valores.grid(row=6, column=0, padx=20, pady=(8, 18), sticky="ew")
 
         valor_total_fmt = self._formatar_moeda(valor_total)
         valor_prim_fmt = self._formatar_moeda(valor_prim)
 
-        ctk.CTkLabel(
-            frame_valores,
-            text="Valor Pendente Total",
-            font=("Segoe UI", 11),
-            text_color=COR_TEXTO_SECUNDARIO,
-            anchor="w"
-        ).grid(row=0, column=0, sticky="w")
+        for rotulo, valor, cor_valor in [
+            ("Valor total", valor_total_fmt, COR_TEXTO),
+            ("Valor pendente", valor_prim_fmt, cor_critica),
+        ]:
+            linha = ctk.CTkFrame(frame_valores, fg_color="transparent")
+            linha.pack(fill="x", pady=1)
 
-        ctk.CTkLabel(
-            frame_valores,
-            text=valor_total_fmt,
-            font=("Segoe UI", 14, "bold"),
-            text_color=COR_TEXTO,
-            anchor="w"
-        ).grid(row=1, column=0, sticky="w")
+            ctk.CTkLabel(
+                linha,
+                text=f"{rotulo}:",
+                font=("Segoe UI", 11),
+                text_color=COR_TEXTO_SECUNDARIO,
+                anchor="w"
+            ).pack(side="left")
 
-        ctk.CTkLabel(
-            frame_valores,
-            text="Valor Pendente (1\u00aa Cont.)",
-            font=("Segoe UI", 11),
-            text_color=COR_TEXTO_SECUNDARIO,
-            anchor="w"
-        ).grid(row=0, column=1, sticky="w", padx=(20, 0))
-
-        ctk.CTkLabel(
-            frame_valores,
-            text=valor_prim_fmt,
-            font=("Segoe UI", 14, "bold"),
-            text_color=cor_critica,
-            anchor="w"
-        ).grid(row=1, column=1, sticky="w", padx=(20, 0))
+            ctk.CTkLabel(
+                linha,
+                text=valor,
+                font=("Segoe UI", 13, "bold"),
+                text_color=cor_valor,
+                anchor="w"
+            ).pack(side="left", padx=(5, 0))
 
     @staticmethod
     def _formatar_moeda(valor):
@@ -286,7 +265,7 @@ class TelaVisaoGeral(ctk.CTkFrame):
         total_tipos = len(visao)
         total_lotes = int(visao["total_lotes"].sum())
         self.rodape.atualizar(
-            f"{total_tipos} tipo(s) de dep\u00f3sito, {total_lotes} lote(s) eleg\u00edveis"
+            f"{total_tipos} tipo(s) de dep\u00f3sito, {total_lotes} lote(s) dispon\u00edveis"
         )
 
     def _erro_carga(self, erro):

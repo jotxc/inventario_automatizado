@@ -7,13 +7,14 @@ from regras.bloqueios import remover_lotes_acima_nivel_1
 from integracoes.sugestao import criar_sugestao_inventario, identificar_primeira_contagem
 from regras.priorizacao import priorizar_lotes, priorizar_combinado
 from regras.selecao import selecionar_lotes
-from historico.historico_documentos import carregar_historico_documentos, remover_lotes_historico
+from historico.historico_documentos import carregar_historico_documentos, remover_lotes_historico, carregar_ultima_geracao, atualizar_documento_geracao
 
 
 class InventarioController:
 
     def __init__(self):
         self.estoque = None
+        self.estoque_visao = None
         self.sugestao_base = None
         self.descricao_excluir = set()
         self.ultimo_resultado = None
@@ -21,6 +22,9 @@ class InventarioController:
 
     def carregar(self):
         self.estoque = preparar_inventario()
+        self.estoque_visao = preparar_inventario(
+            remover_lotes_ordem=False, remover_330_ordem=False
+        )
         self.descricao_excluir = set()
         self.sugestao_base = None
         self.ultimo_resultado = None
@@ -37,18 +41,28 @@ class InventarioController:
         return tipos
 
     def obter_visao_geral(self):
-        if self.estoque is None or self.estoque.empty:
+        if self.estoque_visao is None or self.estoque_visao.empty:
             return None
 
-        from historico.historico_documentos import carregar_historico_documentos, remover_lotes_historico
         from integracoes.sugestao import criar_sugestao_inventario, identificar_primeira_contagem
 
-        dados = self.estoque.copy()
+        dados = self.estoque_visao.copy()
+        print(f"\n[DIAG] 1. Posições no estoque_visao: {len(dados)}")
+        print(f"[DIAG] 1a. Lotes únicos no estoque_visao: {dados['lote'].nunique()}")
+
         sugestao = criar_sugestao_inventario(dados)
+        print(f"[DIAG] 2. Linhas na sugestão (material+lote): {len(sugestao)}")
+        print(f"[DIAG] 2a. Lotes únicos na sugestão: {sugestao['lote'].nunique()}")
+
         sugestao = identificar_primeira_contagem(sugestao)
 
-        historico = carregar_historico_documentos()
-        sugestao = remover_lotes_historico(sugestao, historico)
+        por_tipo = sugestao.groupby("tipo_deposito").agg(
+            total_lotes=("lote", "count"),
+            lotes_unicos=("lote", "nunique"),
+        ).reset_index()
+        print(f"[DIAG] 3. Por tipo_depósito:\n{por_tipo.to_string(index=False)}")
+        print(f"[DIAG] 3a. Soma count(lote): {por_tipo['total_lotes'].sum()}")
+        print(f"[DIAG] 3b. Soma lotes únicos: {por_tipo['lotes_unicos'].sum()}")
 
         visao = sugestao.groupby("tipo_deposito").agg(
             total_lotes=("lote", "count"),
@@ -118,6 +132,12 @@ class InventarioController:
         self.ultimo_resultado = resultado
         return resultado
 
+    def carregar_ultimo_documento_historico(self):
+        return carregar_ultima_geracao()
+
+    def atualizar_numero_documento(self, id_geracao, numero_documento):
+        return atualizar_documento_geracao(id_geracao, numero_documento)
+
     def consultar_estoque(
         self,
         criterio,
@@ -126,6 +146,7 @@ class InventarioController:
         modo_sem_maquina=True,
         criterio_secundario=None
     ):
+        self.ultimos_parametros = None
         dados = self.estoque.copy()
         dados = filtrar_tipo_deposito(dados, tipo_deposito)
 

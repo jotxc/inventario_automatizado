@@ -72,6 +72,8 @@ class TelaVisualizacaoEstoque(ctk.CTkFrame):
         self.ultimo_modo_sem_maquina = True
         self._resize_timer = None
         self.ultima_consulta_sem_exclusao = None
+        self.ultimos_parametros_aplicados = None
+        self.aplicacao_realizada = False
 
         self._criar_filtros()
         self._criar_barra_exclusao()
@@ -198,6 +200,8 @@ class TelaVisualizacaoEstoque(ctk.CTkFrame):
         self.rodape.esconder_progresso()
         self._habilitar_apos_carregamento()
         self.botao_importar.configure(state="normal")
+        self.aplicacao_realizada = False
+        self.ultimos_parametros_aplicados = None
         self.rodape.atualizar(f"Erro: {erro}")
 
     def _criar_filtros(self):
@@ -558,6 +562,15 @@ class TelaVisualizacaoEstoque(ctk.CTkFrame):
         modo_sem_maquina = self.switch_modo.get()
         self.ultimo_modo_sem_maquina = modo_sem_maquina
 
+        self.ultimos_parametros_aplicados = {
+            "criterio": criterio,
+            "criterio_secundario": criterio_sec,
+            "tipo_deposito": tipo,
+            "limite_posicoes": limite,
+            "modo_sem_maquina": modo_sem_maquina,
+        }
+        self.aplicacao_realizada = False
+
         self.botao_aplicar.configure(state="disabled", text="CARREGANDO...")
 
         threading.Thread(
@@ -584,6 +597,8 @@ class TelaVisualizacaoEstoque(ctk.CTkFrame):
         self.ultima_consulta_sem_exclusao = resultado.copy() if not resultado.empty else None
 
         resultado = self.controller.aplicar_exclusao(resultado)
+
+        self.aplicacao_realizada = True
 
         if resultado.empty:
             mensagem = None
@@ -624,6 +639,14 @@ class TelaVisualizacaoEstoque(ctk.CTkFrame):
             messagebox.showwarning("Aguarde", "Os dados ainda est\u00e3o sendo carregados.")
             return
 
+        if not self.aplicacao_realizada:
+            messagebox.showwarning(
+                "Aplicar necess\u00e1rio",
+                "Por favor, clique em APLICAR primeiro para visualizar "
+                "os dados antes de gerar o documento."
+            )
+            return
+
         criterio = CRITERIOS_UI[self.combo_criterio.get()]
         criterio_sec = CRITERIO_SECUNDARIO_MAP[self.combo_criterio2.get()]
         tipo = self.combo_tipo.get()
@@ -633,6 +656,23 @@ class TelaVisualizacaoEstoque(ctk.CTkFrame):
             limite = 100
         modo_sem_maquina = self.switch_modo.get()
         baixas_por_ultimo = self.switch_baixas.get()
+
+        params_atuais = {
+            "criterio": criterio,
+            "criterio_secundario": criterio_sec,
+            "tipo_deposito": tipo,
+            "limite_posicoes": limite,
+            "modo_sem_maquina": modo_sem_maquina,
+        }
+        if self.ultimos_parametros_aplicados is not None and params_atuais != self.ultimos_parametros_aplicados:
+            messagebox.showwarning(
+                "Par\u00e2metros alterados",
+                "Os par\u00e2metros foram alterados desde a \u00faltima "
+                "aplica\u00e7\u00e3o.\n\n"
+                "Clique em APLICAR novamente para visualizar "
+                "o resultado antes de gerar o documento."
+            )
+            return
 
         parametros = {
             "criterio": criterio,
@@ -692,11 +732,19 @@ class TelaVisualizacaoEstoque(ctk.CTkFrame):
         if self.controller.ultimo_resultado is not None:
             self.botao_ver_documento.configure(state="normal")
         else:
-            self.botao_ver_documento.configure(state="disabled")
+            ultimo = self.controller.carregar_ultimo_documento_historico()
+            if ultimo is not None:
+                self.botao_ver_documento.configure(state="normal")
+            else:
+                self.botao_ver_documento.configure(state="disabled")
 
     def _ver_ultimo_documento(self):
         if self.controller.ultimo_resultado:
             self.ao_exibir_resultado(self.controller.ultimo_resultado)
+        else:
+            ultimo = self.controller.carregar_ultimo_documento_historico()
+            if ultimo:
+                self.ao_exibir_resultado(ultimo)
 
     def _erro_geracao(self, erro):
         self.rodape.esconder_progresso()
@@ -761,6 +809,8 @@ class TelaVisualizacaoEstoque(ctk.CTkFrame):
         self.rodape.esconder_progresso()
         self.botao_importar.configure(state="normal")
         self.tabela.limpar()
+        self.aplicacao_realizada = False
+        self.ultimos_parametros_aplicados = None
         self.combo_tipo.configure(values=tipos)
         if tipos:
             self.combo_tipo.set(tipos[0])
