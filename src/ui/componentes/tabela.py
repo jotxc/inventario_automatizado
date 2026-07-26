@@ -147,6 +147,8 @@ class TabelaDados(ctk.CTkFrame):
         else:
             if valor is None or (isinstance(valor, float) and valor != valor):
                 return ""
+            if isinstance(valor, float) and valor == int(valor):
+                return str(int(valor))
             return str(valor)
 
     def carregar(self, dataframe):

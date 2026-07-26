@@ -25,10 +25,11 @@ def _limpar_documento(valor):
 
 class TelaResultado(ctk.CTkFrame):
 
-    def __init__(self, master, resultado, ao_voltar=None):
+    def __init__(self, master, resultado, ao_voltar=None, ao_exibir_historico=None):
         super().__init__(master, fg_color=COR_FUNDO)
         self.resultado = resultado
         self.ao_voltar = ao_voltar
+        self.ao_exibir_historico = ao_exibir_historico
 
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(1, weight=1)
@@ -222,7 +223,7 @@ class TelaResultado(ctk.CTkFrame):
         label_rotulo.grid(row=2, column=0, pady=(0, 15))
 
     def _informar_numero_documento(self):
-        from historico.historico_documentos import carregar_historico_documentos
+        from historico.historico_documentos import carregar_historico_documentos, verificar_documento_existente
 
         try:
             historico = carregar_historico_documentos()
@@ -248,8 +249,15 @@ class TelaResultado(ctk.CTkFrame):
         if not numero or not numero.strip():
             return
 
+        if verificar_documento_existente(numero.strip(), ignorar_id_geracao=self.id_geracao):
+            messagebox.showerror(
+                "Documento duplicado",
+                f"O documento n\u00ba {numero.strip()} j\u00e1 foi atribu\u00eddo a outra gera\u00e7\u00e3o no hist\u00f3rico."
+            )
+            return
+
         try:
-            sucesso = atualizar_documento_geracao(self.id_geracao, numero.strip())
+            sucesso, mensagem = atualizar_documento_geracao(self.id_geracao, numero.strip())
             if sucesso:
                 self._documento_atual = numero.strip()
                 self._montar_cartoes(self._documento_atual)
@@ -258,12 +266,7 @@ class TelaResultado(ctk.CTkFrame):
                     f"Documento n\u00ba {numero.strip()} salvo com sucesso!"
                 )
             else:
-                messagebox.showerror(
-                    "Erro",
-                    "N\u00e3o foi poss\u00edvel salvar o n\u00famero.\n\n"
-                    "O ID desta gera\u00e7\u00e3o n\u00e3o foi encontrado no arquivo de hist\u00f3rico.\n"
-                    "Tente gerar um novo documento primeiro."
-                )
+                messagebox.showerror("Erro", mensagem)
         except Exception as e:
             messagebox.showerror(
                 "Erro",
@@ -278,9 +281,12 @@ class TelaResultado(ctk.CTkFrame):
 
     def abrir_historico(self):
         if not os.path.exists(ARQUIVO_HISTORICO):
-            messagebox.showwarning("Hist\u00f3rico", "Hist\u00f3rico n\u00e3o encontrado.")
+            messagebox.showwarning("Hist\u00f3rico", "Hist\u00f3rico n\u00e3o encontrado. Gere um documento primeiro.")
             return
-        self._abrir_arquivo(ARQUIVO_HISTORICO)
+        if self.ao_exibir_historico:
+            self.ao_exibir_historico()
+        else:
+            self._abrir_arquivo(ARQUIVO_HISTORICO)
 
     @staticmethod
     def _abrir_arquivo(caminho):

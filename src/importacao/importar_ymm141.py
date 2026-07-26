@@ -18,6 +18,6 @@ def carregar_ymm141():
             "Arquivo YMM141.xlsx não encontrado."
         )
 
-    ymm141 = pd.read_excel(caminho_arquivo)
+    ymm141 = pd.read_excel(caminho_arquivo, engine="calamine")
 
     return ymm141

@@ -19,7 +19,7 @@ def carregar_lx02():
             "Coloque o arquivo na pasta data/entrada."
         )
 
-    estoque = pd.read_excel(caminho_arquivo)
+    estoque = pd.read_excel(caminho_arquivo, engine="calamine")
 
     coluna = "Data da entrada de mercadorias"
     valores_crus = estoque[coluna].copy()
