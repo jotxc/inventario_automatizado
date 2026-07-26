@@ -1,12 +1,8 @@
 import threading
-import os
-import shutil
-import platform
-import subprocess
 import customtkinter as ctk
-from tkinter import messagebox, filedialog
+from tkinter import messagebox
 
-from config.config import CRITERIOS_UI, ENTRADA_DIR
+from config.config import CRITERIOS_UI
 from ui.tema import (
     COR_PRIMARIA, COR_PRIMARIA_HOVER, COR_SUCESSO, COR_SUCESSO_HOVER,
     COR_TEXTO, COR_TEXTO_BRANCO, COR_TEXTO_SECUNDARIO,
@@ -50,11 +46,12 @@ CRITERIO_SECUNDARIO_MAP = {
 
 class TelaVisualizacaoEstoque(ctk.CTkFrame):
 
-    def __init__(self, master, controller, ao_exibir_resultado=None, ao_exibir_visao_geral=None):
+    def __init__(self, master, controller, ao_exibir_resultado=None, ao_exibir_visao_geral=None, ao_exibir_historico=None):
         super().__init__(master, fg_color=COR_FUNDO)
         self.controller = controller
         self.ao_exibir_resultado = ao_exibir_resultado
         self.ao_exibir_visao_geral = ao_exibir_visao_geral
+        self.ao_exibir_historico = ao_exibir_historico
 
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(3, weight=1)
@@ -188,7 +185,6 @@ class TelaVisualizacaoEstoque(ctk.CTkFrame):
         self.botao_gerar.configure(state="normal")
         self.botao_importar.configure(state="normal")
         self._atualizar_status_exclusao()
-        self._atualizar_botao_ver_documento()
         self.rodape.atualizar("Pronto")
 
     def _erro(self, erro):
@@ -489,7 +485,7 @@ class TelaVisualizacaoEstoque(ctk.CTkFrame):
             barra,
             text="\U0001F4E5  Atualizar Dados",
             font=("Segoe UI", 13),
-            command=self.importar_dados,
+            command=self.atualizar_dados,
             fg_color=COR_PRIMARIA,
             hover_color=COR_PRIMARIA_HOVER,
             text_color=COR_TEXTO_BRANCO,
@@ -515,20 +511,19 @@ class TelaVisualizacaoEstoque(ctk.CTkFrame):
         )
         self.botao_visao_geral.grid(row=0, column=2, padx=(0, 8), pady=13, sticky="e")
 
-        self.botao_ver_documento = ctk.CTkButton(
+        self.botao_historico = ctk.CTkButton(
             barra,
-            text="\U0001F4C4  Ver \u00daltimo Documento",
+            text="\U0001F4CB  Hist\u00f3rico",
             font=("Segoe UI", 13),
-            command=self._ver_ultimo_documento,
+            command=self._abrir_historico,
             fg_color=COR_PRIMARIA,
             hover_color=COR_PRIMARIA_HOVER,
             text_color=COR_TEXTO_BRANCO,
-            state="disabled",
             height=38,
-            width=210,
+            width=130,
             corner_radius=8
         )
-        self.botao_ver_documento.grid(row=0, column=3, padx=(0, 8), pady=13, sticky="e")
+        self.botao_historico.grid(row=0, column=3, padx=(0, 8), pady=13, sticky="e")
 
         self.botao_gerar = ctk.CTkButton(
             barra,
@@ -680,7 +675,6 @@ class TelaVisualizacaoEstoque(ctk.CTkFrame):
             "tipo_deposito": tipo,
             "limite_posicoes": limite,
             "modo_sem_maquina": modo_sem_maquina,
-            "baixas_por_ultimo": baixas_por_ultimo,
         }
 
         if self.controller.parametros_iguais_ultima_geracao(parametros):
@@ -723,28 +717,8 @@ class TelaVisualizacaoEstoque(ctk.CTkFrame):
         self.botao_gerar.configure(state="normal", text="\u25B6  GERAR DOCUMENTO")
         self.rodape.atualizar("Documento gerado com sucesso")
 
-        self.botao_ver_documento.configure(state="normal")
-
         if self.ao_exibir_resultado:
             self.ao_exibir_resultado(resultado)
-
-    def _atualizar_botao_ver_documento(self):
-        if self.controller.ultimo_resultado is not None:
-            self.botao_ver_documento.configure(state="normal")
-        else:
-            ultimo = self.controller.carregar_ultimo_documento_historico()
-            if ultimo is not None:
-                self.botao_ver_documento.configure(state="normal")
-            else:
-                self.botao_ver_documento.configure(state="disabled")
-
-    def _ver_ultimo_documento(self):
-        if self.controller.ultimo_resultado:
-            self.ao_exibir_resultado(self.controller.ultimo_resultado)
-        else:
-            ultimo = self.controller.carregar_ultimo_documento_historico()
-            if ultimo:
-                self.ao_exibir_resultado(ultimo)
 
     def _erro_geracao(self, erro):
         self.rodape.esconder_progresso()
@@ -761,51 +735,28 @@ class TelaVisualizacaoEstoque(ctk.CTkFrame):
         if self.ao_exibir_visao_geral:
             self.ao_exibir_visao_geral()
 
-    # --- Importação de Dados ---
+    def _abrir_historico(self):
+        if self.ao_exibir_historico:
+            self.ao_exibir_historico()
 
-    def importar_dados(self):
-        messagebox.showinfo(
-            "Atualizar Dados",
-            "Selecione o arquivo LX02 do dia."
-        )
-        lx02 = filedialog.askopenfilename(
-            title="Selecione o arquivo LX02",
-            filetypes=[("Excel", "*.xlsx"), ("Todos", "*.*")]
-        )
-        if not lx02:
-            return
+    # --- Atualização de Dados ---
 
-        messagebox.showinfo(
-            "Atualizar Dados",
-            "Agora selecione o arquivo YMM141 do dia."
-        )
-        ymm141 = filedialog.askopenfilename(
-            title="Selecione o arquivo YMM141",
-            filetypes=[("Excel", "*.xlsx"), ("Todos", "*.*")]
-        )
-        if not ymm141:
-            return
-
-        self.rodape.atualizar("Importando dados...")
+    def atualizar_dados(self):
+        self.rodape.atualizar("Atualizando dados...")
         self.rodape.mostrar_progresso()
         self.botao_importar.configure(state="disabled")
 
-        threading.Thread(target=self._executar_importacao, args=(
-            lx02, ymm141
-        ), daemon=True).start()
+        threading.Thread(target=self._executar_atualizacao, daemon=True).start()
 
-    def _executar_importacao(self, lx02, ymm141):
+    def _executar_atualizacao(self):
         try:
-            shutil.copy2(lx02, os.path.join(ENTRADA_DIR, "LX02.xlsx"))
-            shutil.copy2(ymm141, os.path.join(ENTRADA_DIR, "YMM141.xlsx"))
-
             tipos = self.controller.carregar()
-            self.after(0, lambda: self._pos_importacao(tipos))
+            self.after(0, lambda: self._pos_atualizacao(tipos))
         except Exception as e:
             erro = str(e)
             self.after(0, lambda: self._erro(erro))
 
-    def _pos_importacao(self, tipos):
+    def _pos_atualizacao(self, tipos):
         self.rodape.esconder_progresso()
         self.botao_importar.configure(state="normal")
         self.tabela.limpar()
@@ -815,8 +766,7 @@ class TelaVisualizacaoEstoque(ctk.CTkFrame):
         if tipos:
             self.combo_tipo.set(tipos[0])
         self._atualizar_status_exclusao()
-        self._atualizar_botao_ver_documento()
         self.label_totais.configure(
             text="Lotes: 0  |  Posi\u00e7\u00f5es: 0  |  Valor Total: R$ 0,00"
         )
-        self.rodape.atualizar("Dados importados com sucesso")
+        self.rodape.atualizar("Dados atualizados com sucesso")

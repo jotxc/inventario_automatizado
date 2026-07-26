@@ -63,8 +63,7 @@ from historico.historico_documentos import (
 )
 
 
-def preparar_inventario(remover_lotes_ordem=True, remover_330_ordem=True):
-
+def _carregar_base():
     estoque = carregar_lx02()
     ymm141 = carregar_ymm141()
     custos = carregar_custos()
@@ -82,10 +81,6 @@ def preparar_inventario(remover_lotes_ordem=True, remover_330_ordem=True):
 
     estoque = remover_posicoes_controladas(estoque)
     estoque = preparar_posicoes(estoque)
-    if remover_lotes_ordem:
-        estoque = remover_lotes_em_ordem(estoque)
-    if remover_330_ordem:
-        estoque = remover_posicoes_330_em_ordem(estoque)
     estoque = remover_lotes_recentes(estoque)
 
     resumo = resumir_ultima_contagem(ymm141)
@@ -107,6 +102,18 @@ def preparar_inventario(remover_lotes_ordem=True, remover_330_ordem=True):
     return estoque
 
 
+def preparar_inventario(remover_lotes_ordem=True, remover_330_ordem=True):
+
+    estoque = _carregar_base()
+
+    if remover_lotes_ordem:
+        estoque = remover_lotes_em_ordem(estoque)
+    if remover_330_ordem:
+        estoque = remover_posicoes_330_em_ordem(estoque)
+
+    return estoque
+
+
 def executar_inventario(
     estoque,
     criterio,
@@ -116,7 +123,8 @@ def executar_inventario(
     modo_sem_maquina=True,
     criterio_secundario=None,
     descricao_excluir=None,
-    baixas_por_ultimo=False
+    baixas_por_ultimo=False,
+    historico=None
 ):
 
     print("\nANTES DO FILTRO:", len(estoque))
@@ -142,7 +150,8 @@ def executar_inventario(
 
     print("APÓS PRIMEIRA CONTAGEM:", len(sugestao))
 
-    historico = carregar_historico_documentos()
+    if historico is None:
+        historico = carregar_historico_documentos()
     sugestao = remover_lotes_historico(sugestao, historico)
     print("APÓS REMOVER HISTÓRICO:", len(sugestao))
 

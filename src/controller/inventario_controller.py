@@ -1,13 +1,21 @@
 from core.inventario import (
+    _carregar_base,
     preparar_inventario,
     executar_inventario
 )
 from regras.filtros import filtrar_tipo_deposito
-from regras.bloqueios import remover_lotes_acima_nivel_1
+from regras.bloqueios import (
+    remover_lotes_acima_nivel_1,
+    remover_lotes_em_ordem,
+    remover_posicoes_330_em_ordem
+)
 from integracoes.sugestao import criar_sugestao_inventario, identificar_primeira_contagem
 from regras.priorizacao import priorizar_lotes, priorizar_combinado
 from regras.selecao import selecionar_lotes
-from historico.historico_documentos import carregar_historico_documentos, remover_lotes_historico, carregar_ultima_geracao, atualizar_documento_geracao
+from historico.historico_documentos import (
+    carregar_historico_documentos, remover_lotes_historico, carregar_ultima_geracao,
+    atualizar_documento_geracao, listar_geracoes, excluir_geracao, obter_detalhes_geracao
+)
 
 
 class InventarioController:
@@ -19,16 +27,30 @@ class InventarioController:
         self.descricao_excluir = set()
         self.ultimo_resultado = None
         self.ultimos_parametros = None
+        self._cache_historico = None
+
+    def _obter_historico(self):
+        if self._cache_historico is not None:
+            return self._cache_historico
+        self._cache_historico = carregar_historico_documentos()
+        return self._cache_historico
+
+    def _invalidar_cache_historico(self):
+        self._cache_historico = None
 
     def carregar(self):
-        self.estoque = preparar_inventario()
-        self.estoque_visao = preparar_inventario(
-            remover_lotes_ordem=False, remover_330_ordem=False
-        )
+        base = _carregar_base()
+
+        self.estoque_visao = base
+        self.estoque = base.copy()
+        self.estoque = remover_lotes_em_ordem(self.estoque)
+        self.estoque = remover_posicoes_330_em_ordem(self.estoque)
+
         self.descricao_excluir = set()
         self.sugestao_base = None
         self.ultimo_resultado = None
         self.ultimos_parametros = None
+        self._invalidar_cache_historico()
 
         tipos = (
             self.estoque["tipo_deposito"]
@@ -115,7 +137,6 @@ class InventarioController:
             "tipo_deposito": tipo_deposito,
             "limite_posicoes": limite_posicoes,
             "modo_sem_maquina": modo_sem_maquina,
-            "baixas_por_ultimo": baixas_por_ultimo,
         }
 
         resultado = executar_inventario(
@@ -126,9 +147,11 @@ class InventarioController:
             modo_sem_maquina=modo_sem_maquina,
             criterio_secundario=criterio_secundario,
             descricao_excluir=self.descricao_excluir,
-            baixas_por_ultimo=baixas_por_ultimo
+            baixas_por_ultimo=baixas_por_ultimo,
+            historico=self._obter_historico()
         )
 
+        self._invalidar_cache_historico()
         self.ultimo_resultado = resultado
         return resultado
 
@@ -136,7 +159,20 @@ class InventarioController:
         return carregar_ultima_geracao()
 
     def atualizar_numero_documento(self, id_geracao, numero_documento):
-        return atualizar_documento_geracao(id_geracao, numero_documento)
+        sucesso, mensagem = atualizar_documento_geracao(id_geracao, numero_documento)
+        self._invalidar_cache_historico()
+        return sucesso, mensagem
+
+    def listar_geracoes_historico(self):
+        return listar_geracoes()
+
+    def excluir_geracao_historico(self, id_geracao):
+        resultado = excluir_geracao(id_geracao)
+        self._invalidar_cache_historico()
+        return resultado
+
+    def obter_detalhes_geracao(self, id_geracao):
+        return obter_detalhes_geracao(id_geracao)
 
     def consultar_estoque(
         self,
@@ -157,7 +193,7 @@ class InventarioController:
 
         sugestao = identificar_primeira_contagem(sugestao)
 
-        historico = carregar_historico_documentos()
+        historico = self._obter_historico()
         sugestao = remover_lotes_historico(sugestao, historico)
 
         self.sugestao_base = sugestao.copy()

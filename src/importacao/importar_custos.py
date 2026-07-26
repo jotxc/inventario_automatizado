@@ -18,6 +18,6 @@ def carregar_custos():
             "Arquivo Custos.xlsx não encontrado."
         )
 
-    custos = pd.read_excel(caminho_arquivo)
+    custos = pd.read_excel(caminho_arquivo, engine="calamine")
 
     return custos

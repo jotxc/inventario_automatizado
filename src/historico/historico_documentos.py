@@ -42,6 +42,7 @@ def criar_historico_documento(
 
         historico["lote"] = historico["lote"].astype(str)
         historico["tipo_deposito"] = historico["tipo_deposito"].astype(str)
+        historico["material"] = historico["material"].astype(str)
 
         historico = historico.merge(
             info[["lote", "tipo_deposito", "quantidade_posicoes", "valor_lote"]],
@@ -166,7 +167,121 @@ def carregar_ultima_geracao():
     }
 
 
+def _normalizar_documento(valor):
+    if valor is None:
+        return ""
+    if isinstance(valor, float) and pd.isna(valor):
+        return ""
+    texto = str(valor).strip()
+    if texto.lower() == "none" or texto.lower() == "nan":
+        return ""
+    if texto.endswith(".0"):
+        texto = texto[:-2]
+    return texto
+
+
+def verificar_documento_existente(numero_documento, ignorar_id_geracao=None):
+
+    historico = carregar_historico_documentos()
+
+    if historico.empty or "documento" not in historico.columns:
+        return False
+
+    numero_documento = _normalizar_documento(numero_documento)
+
+    if not numero_documento:
+        return False
+
+    historico["documento_norm"] = historico["documento"].apply(_normalizar_documento)
+
+    mascara = historico["documento_norm"] == numero_documento
+
+    if ignorar_id_geracao is not None:
+        historico["id_geracao"] = historico["id_geracao"].fillna("").astype(str)
+        ignorar_id_geracao = str(ignorar_id_geracao)
+        mascara = mascara & (historico["id_geracao"] != ignorar_id_geracao)
+
+    historico.drop(columns=["documento_norm"], inplace=True)
+    return mascara.any()
+
+
 def atualizar_documento_geracao(id_geracao, numero_documento):
+
+    caminho = (
+        Path(__file__)
+        .resolve()
+        .parents[2]
+        / "data"
+        / "historico"
+        / "historico_documentos.xlsx"
+    )
+
+    if not caminho.exists():
+        return False, "Arquivo de hist\u00f3rico n\u00e3o encontrado."
+
+    numero_documento = _normalizar_documento(numero_documento)
+
+    if not numero_documento:
+        return False, "N\u00famero do documento inv\u00e1lido."
+
+    if verificar_documento_existente(numero_documento, ignorar_id_geracao=id_geracao):
+        return False, f"O documento n\u00ba {numero_documento} j\u00e1 existe no hist\u00f3rico."
+
+    try:
+        historico = pd.read_excel(caminho)
+
+        if "id_geracao" not in historico.columns:
+            return False, "Hist\u00f3rico sem coluna id_geracao."
+
+        historico["id_geracao"] = historico["id_geracao"].fillna("").astype(str)
+        historico["documento"] = historico["documento"].fillna("").astype(str)
+        id_geracao = str(id_geracao)
+
+        mask = historico["id_geracao"] == id_geracao
+
+        if not mask.any():
+            return False, "ID da gera\u00e7\u00e3o n\u00e3o encontrado no hist\u00f3rico."
+
+        historico.loc[mask, "documento"] = numero_documento
+        historico.to_excel(caminho, index=False)
+        return True, ""
+    except Exception as e:
+        print(f"Erro ao atualizar documento: {e}")
+        return False, f"Erro ao salvar: {e}"
+
+
+def listar_geracoes():
+
+    historico = carregar_historico_documentos()
+
+    if historico.empty:
+        return pd.DataFrame()
+
+    if "id_geracao" not in historico.columns:
+        return pd.DataFrame()
+
+    cols_agregar = {
+        "data_geracao": "first",
+        "criterio": "first",
+        "tipo_deposito": "first",
+        "documento": "first",
+        "total_lotes_geracao": "first",
+        "total_posicoes_geracao": "first",
+        "total_valor_geracao": "first",
+        "quantidade_posicoes": "sum",
+        "valor_lote": "sum",
+    }
+
+    cols_existentes = {k: v for k, v in cols_agregar.items() if k in historico.columns}
+
+    resumo = historico.groupby("id_geracao", sort=False).agg(cols_existentes).reset_index()
+
+    resumo = resumo.sort_values("data_geracao", ascending=False).reset_index(drop=True)
+
+    return resumo
+
+
+def excluir_geracao(id_geracao):
 
     caminho = (
         Path(__file__)
@@ -187,20 +302,40 @@ def atualizar_documento_geracao(id_geracao, numero_documento):
             return False
 
         historico["id_geracao"] = historico["id_geracao"].fillna("").astype(str)
-        historico["documento"] = historico["documento"].fillna("").astype(str)
         id_geracao = str(id_geracao)
 
-        mask = historico["id_geracao"] == id_geracao
+        antes = len(historico)
+        historico = historico[historico["id_geracao"] != id_geracao]
+        depois = len(historico)
 
-        if not mask.any():
+        if antes == depois:
             return False
 
-        historico.loc[mask, "documento"] = str(numero_documento)
         historico.to_excel(caminho, index=False)
         return True
     except Exception as e:
-        print(f"Erro ao atualizar documento: {e}")
+        print(f"Erro ao excluir geração: {e}")
         return False
+
+
+def obter_detalhes_geracao(id_geracao):
+
+    historico = carregar_historico_documentos()
+
+    if historico.empty or "id_geracao" not in historico.columns:
+        return pd.DataFrame()
+
+    historico["id_geracao"] = historico["id_geracao"].fillna("").astype(str)
+    id_geracao = str(id_geracao)
+
+    detalhes = historico[historico["id_geracao"] == id_geracao].copy()
+
+    cols_para_mostrar = [c for c in ["material", "lote", "tipo_deposito", "quantidade_posicoes", "valor_lote", "documento"] if c in detalhes.columns]
+
+    if not cols_para_mostrar:
+        return detalhes
+
+    return detalhes[cols_para_mostrar]
 
 
 def remover_lotes_historico(

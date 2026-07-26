@@ -1,12 +1,11 @@
 import threading
 import os
-import shutil
 import platform
 import subprocess
 import customtkinter as ctk
-from tkinter import messagebox, filedialog
+from tkinter import messagebox
 
-from config.config import ARQUIVO_SAIDA, ARQUIVO_HISTORICO, ENTRADA_DIR, CRITERIOS_UI
+from config.config import ARQUIVO_SAIDA, ARQUIVO_HISTORICO, CRITERIOS_UI
 from controller.inventario_controller import InventarioController
 from ui.tema import COR_FUNDO
 from ui.componentes.cabecalho import Cabecalho
@@ -41,7 +40,7 @@ class TelaPrincipal(ctk.CTkFrame):
         self.resumo = Resumo(frame_meio)
         self.resumo.grid(row=0, column=1, sticky="new", padx=(10, 0))
 
-        self.barra_acoes = BarraAcoes(self, ao_importar=self.importar_dados, ao_visualizar=self._abrir_visualizacao)
+        self.barra_acoes = BarraAcoes(self, ao_importar=self.atualizar_dados, ao_visualizar=self._abrir_visualizacao)
         self.barra_acoes.grid(row=2, column=0, sticky="ew", padx=40, pady=(0, 10))
         self.barra_acoes.botao_documento.configure(command=self.abrir_documento)
         self.barra_acoes.botao_historico.configure(command=self.abrir_historico)
@@ -131,49 +130,22 @@ class TelaPrincipal(ctk.CTkFrame):
         self.rodape.esconder_progresso()
         self.rodape.atualizar(f"Erro: {erro}")
 
-    def importar_dados(self):
-        messagebox.showinfo(
-            "Atualizar Dados",
-            "Selecione o arquivo LX02 do dia."
-        )
-        lx02 = filedialog.askopenfilename(
-            title="Selecione o arquivo LX02",
-            filetypes=[("Excel", "*.xlsx"), ("Todos", "*.*")]
-        )
-        if not lx02:
-            return
-
-        messagebox.showinfo(
-            "Atualizar Dados",
-            "Agora selecione o arquivo YMM141 do dia."
-        )
-        ymm141 = filedialog.askopenfilename(
-            title="Selecione o arquivo YMM141",
-            filetypes=[("Excel", "*.xlsx"), ("Todos", "*.*")]
-        )
-        if not ymm141:
-            return
-
-        self.rodape.atualizar("Importando dados...")
+    def atualizar_dados(self):
+        self.rodape.atualizar("Atualizando dados...")
         self.rodape.mostrar_progresso()
         self.barra_acoes.botao_importar.configure(state="disabled")
 
-        threading.Thread(target=self._executar_importacao, args=(
-            lx02, ymm141
-        ), daemon=True).start()
+        threading.Thread(target=self._executar_atualizacao, daemon=True).start()
 
-    def _executar_importacao(self, lx02, ymm141):
+    def _executar_atualizacao(self):
         try:
-            shutil.copy2(lx02, os.path.join(ENTRADA_DIR, "LX02.xlsx"))
-            shutil.copy2(ymm141, os.path.join(ENTRADA_DIR, "YMM141.xlsx"))
-
             tipos = self.controller.carregar()
-            self.after(0, lambda: self._pos_importacao(tipos))
+            self.after(0, lambda: self._pos_atualizacao(tipos))
         except Exception as e:
             erro = str(e)
             self.after(0, lambda: self._erro(erro))
 
-    def _pos_importacao(self, tipos):
+    def _pos_atualizacao(self, tipos):
         self.rodape.esconder_progresso()
         self.barra_acoes.botao_importar.configure(state="normal")
         self.barra_acoes.botao_documento.configure(state="disabled")
@@ -182,7 +154,7 @@ class TelaPrincipal(ctk.CTkFrame):
         self.formulario.combo_tipo.configure(values=tipos)
         if tipos:
             self.formulario.combo_tipo.set(tipos[0])
-        self.rodape.atualizar("Dados importados com sucesso")
+        self.rodape.atualizar("Dados atualizados com sucesso")
 
     def abrir_documento(self):
         if not os.path.exists(ARQUIVO_SAIDA):
