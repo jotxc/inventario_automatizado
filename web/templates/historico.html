@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% set subtitulo = "Visualize, edite e gerencie todas as geracoes de documentos" %}
+
+{% block content %}
+<div class="card card-padding historico-busca">
+    <span style="font-size: 16px; color: var(--cor-texto-secundario);">🔍</span>
+    <input type="text" id="historicoBusca" placeholder="Buscar por data, material, lote, documento...">
+    <span style="font-size: 12px; font-weight: bold; white-space: nowrap;" id="historicoTotal">
+        {{ geracoes|length }} geracao(oes)
+    </span>
+    <a href="{{ url_for('index') }}" class="btn btn-outline-primary btn-sm">← VOLTAR</a>
+</div>
+
+{% if geracoes %}
+    {% for g in geracoes %}
+    <div class="historico-card">
+        <div class="card-header">
+            {% if g.documento %}
+                <span class="doc-info ok">🔑 N° Doc.: {{ g.documento }}</span>
+            {% else %}
+                <span class="doc-info pendente">🔒 N° Doc.: Pendente</span>
+            {% endif %}
+            <span class="data-info">📅 {{ g.data_geracao }}</span>
+            {% if g.tipo_deposito %}
+                <span class="badge-tipo">🏭 Deposito {{ g.tipo_deposito }}</span>
+            {% endif %}
+            <div class="acoes">
+                <button class="btn btn-primary btn-sm" data-acao="ver" data-id="{{ g.id_geracao }}">👁 Ver</button>
+                <button class="btn btn-warning btn-sm" data-acao="editar-doc" data-id="{{ g.id_geracao }}">✏ Editar</button>
+                <button class="btn btn-danger btn-sm" data-acao="excluir" data-id="{{ g.id_geracao }}" data-data="{{ g.data_geracao }}">🗑 Excluir</button>
+                <button class="btn btn-outline-primary btn-sm" data-toggle="expand" data-target="detalhes-{{ loop.index }}">Expandir ▼</button>
+            </div>
+        </div>
+        <div class="stats">
+            <span>📦 {{ g.total_lotes }} lotes</span>
+            <span>📍 {{ g.total_posicoes }} posicoes</span>
+            <span>💰 {{ g.total_valor }}</span>
+        </div>
+        <div class="card-body hidden" id="detalhes-{{ loop.index }}" data-id="{{ g.id_geracao }}">
+            <div class="detalhes-loading" style="text-align:center;padding:10px;color:var(--cor-texto-secundario);font-size:12px;">Carregando detalhes...</div>
+        </div>
+    </div>
+    {% endfor %}
+{% else %}
+    <div class="empty-state">
+        Nenhum historico encontrado.<br>
+        Gere um documento para criar o historico.
+    </div>
+{% endif %}
+
+<div class="card card-padding historico-rodape" style="margin-top: 10px;">
+    <span class="status">
+        {% if geracoes %}
+            Total: {{ geracoes|length }} geracao(oes)
+        {% else %}
+            Nenhum registro no historico.
+        {% endif %}
+    </span>
+    {% if tem_historico %}
+        <a href="{{ url_for('download_historico') }}" class="btn btn-primary btn-sm">📄 Abrir Excel</a>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block rodape %}
+Historico de documentos gerados
+{% endblock %}

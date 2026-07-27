@@ -28,6 +28,7 @@ class InventarioController:
         self.ultimo_resultado = None
         self.ultimos_parametros = None
         self._cache_historico = None
+        self.aplicacao_realizada = False
 
     def _obter_historico(self):
         if self._cache_historico is not None:
@@ -50,6 +51,7 @@ class InventarioController:
         self.sugestao_base = None
         self.ultimo_resultado = None
         self.ultimos_parametros = None
+        self.aplicacao_realizada = False
         self._invalidar_cache_historico()
 
         tipos = (
@@ -182,6 +184,7 @@ class InventarioController:
         modo_sem_maquina=True,
         criterio_secundario=None
     ):
+        self.aplicacao_realizada = True
         self.ultimos_parametros = None
         dados = self.estoque.copy()
         dados = filtrar_tipo_deposito(dados, tipo_deposito)

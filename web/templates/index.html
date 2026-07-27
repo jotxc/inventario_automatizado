@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% set subtitulo = "Visualize, edite e gere documentos de inventario" %}
+
+{% block content %}
+<form id="filtrosForm">
+    <div class="card card-padding filtros-linha">
+        <label>1° Criterio:</label>
+        <select name="criterio">
+            {% for rotulo, valor in criterios.items() %}
+                <option value="{{ valor }}" {% if loop.first %}selected{% endif %}>{{ rotulo }}</option>
+            {% endfor %}
+        </select>
+
+        <label>2° Criterio:</label>
+        <select name="criterio_secundario">
+            {% for c in criterios_secundarios %}
+                <option value="{{ c }}" {% if loop.index == 2 %}selected{% endif %}>{{ c }}</option>
+            {% endfor %}
+        </select>
+
+        <label>Tipo Dep.:</label>
+        <select name="tipo_deposito">
+            {% for t in tipos %}
+                <option value="{{ t }}">{{ t }}</option>
+            {% endfor %}
+        </select>
+
+        <label>Lim.:</label>
+        <input type="number" name="limite_posicoes" value="100" min="1">
+
+        <label class="switch-group">
+            <span class="switch">
+                <input type="checkbox" name="modo_sem_maquina" value="true">
+                <span class="slider"></span>
+            </span>
+            S/ maq.
+        </label>
+
+        <label class="switch-group">
+            <span class="switch">
+                <input type="checkbox" name="baixas_por_ultimo" value="true">
+                <span class="slider"></span>
+            </span>
+            Baixas p/ final
+        </label>
+
+        <button type="button" class="btn btn-success" id="btnAplicar">🔍 APLICAR</button>
+    </div>
+</form>
+
+<div class="card card-padding exclusao-bar" style="margin-top: 5px;">
+    <span class="label-exc">Excluir descricao:</span>
+    <button type="button" class="btn btn-outline-primary btn-sm" id="btnExcluirDescricao">▼ Descricao</button>
+    <button type="button" class="btn btn-danger btn-sm" id="btnLimparExclusao" {% if descricao_excluir_qtd == 0 %}style="display:none;"{% endif %}>✖ Limpar Exclusao</button>
+    <span class="status-exc {% if descricao_excluir_qtd == 0 %}vazio{% endif %}" id="statusExclusao">
+        {% if descricao_excluir_qtd > 0 %}
+            {{ descricao_excluir_qtd }} descricao(oes) excluida(s)
+        {% else %}
+            Nenhuma exclusao ativa
+        {% endif %}
+    </span>
+</div>
+
+<div id="modalExclusao" class="modal-overlay hidden">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Selecionar Descricoes para Excluir</h3>
+            <span class="modal-close" id="modalExclusaoClose">&times;</span>
+        </div>
+        <div class="modal-body" id="modalExclusaoBody">
+            <div class="modal-acoes">
+                <button type="button" class="btn btn-sm btn-outline-primary" id="modalSelecionarTodos">Selecionar Todos</button>
+                <button type="button" class="btn btn-sm btn-outline-primary" id="modalLimparTodos">Limpar Todos</button>
+            </div>
+            <div id="modalListaDescricoes" class="modal-lista"></div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-primary" id="modalAplicarExclusao">Aplicar</button>
+            <button type="button" class="btn btn-outline-primary" id="modalCancelarExclusao">Cancelar</button>
+        </div>
+    </div>
+</div>
+
+<div class="tabela-wrapper" id="tabelaContainer">
+    {{ tabela_html|safe }}
+</div>
+
+<div class="card card-padding barra-acoes" style="margin-top: 5px;">
+    <span class="totais" id="totaisContainer">
+        Lotes: {{ totais.lotes }}  |  Posicoes: {{ totais.posicoes }}  |  Valor Total: {{ totais.valor }}
+    </span>
+    <div class="botoes" style="gap: 8px;">
+        <a href="{{ url_for('visao_geral') }}" class="btn btn-primary">👁 Visao Geral</a>
+        <a href="{{ url_for('historico') }}" class="btn btn-primary">📋 Historico</a>
+        <a href="{{ url_for('upload') }}" class="btn btn-outline-primary">🔄 Atualizar Dados</a>
+        <button type="button" class="btn btn-success btn-lg" id="btnGerar">▶ GERAR DOCUMENTO</button>
+    </div>
+</div>
+{% endblock %}
+
+{% block rodape %}
+Pronto
+{% endblock %}
