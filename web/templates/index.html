@@ -68,6 +68,9 @@
             <span class="modal-close" id="modalExclusaoClose">&times;</span>
         </div>
         <div class="modal-body" id="modalExclusaoBody">
+            <div class="modal-busca">
+                <input type="text" id="modalBuscaDescricao" class="form-input" placeholder="Digite para filtrar descricoes..." style="width:100%;padding:8px;border:1px solid var(--cor-borda);border-radius:6px;font-size:13px;">
+            </div>
             <div class="modal-acoes">
                 <button type="button" class="btn btn-sm btn-outline-primary" id="modalSelecionarTodos">Selecionar Todos</button>
                 <button type="button" class="btn btn-sm btn-outline-primary" id="modalLimparTodos">Limpar Todos</button>
@@ -92,8 +95,10 @@
     <div class="botoes" style="gap: 8px;">
         <a href="{{ url_for('visao_geral') }}" class="btn btn-primary">👁 Visao Geral</a>
         <a href="{{ url_for('historico') }}" class="btn btn-primary">📋 Historico</a>
-        <a href="{{ url_for('upload') }}" class="btn btn-outline-primary">🔄 Atualizar Dados</a>
-        <button type="button" class="btn btn-success btn-lg" id="btnGerar">▶ GERAR DOCUMENTO</button>
+        <form action="{{ url_for('atualizar_dados') }}" method="POST" style="display:inline;">
+            <button type="submit" class="btn btn-outline-primary">🔄 Atualizar Dados</button>
+        </form>
+        <button type="button" class="btn btn-success btn-lg" id="btnGerar" disabled title="Clique em APLICAR primeiro">▶ GERAR DOCUMENTO</button>
     </div>
 </div>
 {% endblock %}

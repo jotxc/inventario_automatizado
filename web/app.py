@@ -16,7 +16,7 @@ sys.path.insert(0, str(_PROJECT_ROOT / "src"))
 from controller.inventario_controller import InventarioController
 
 app = Flask(__name__)
-app.secret_key = "inventario-rotativo-secret-key-change-in-production"
+app.secret_key = os.getenv("FLASK_SECRET_KEY", "inventario-rotativo-secret-key-change-in-production")
 
 _ENTRADA_DIR = _PROJECT_ROOT / "data" / "entrada"
 _SAIDA_DIR = _PROJECT_ROOT / "data" / "saida"
@@ -80,8 +80,11 @@ def _formatar_valor_tabela(chave, valor):
         return _formatar_data(valor)
     if chave in ("nunca_contado",):
         return "Sim" if valor is True or str(valor).lower() == "true" else "Nao"
-    if chave in ("quantidade_posicoes", "dias_sem_contagem", "material"):
-        return str(int(float(str(valor))))
+    if chave in ("quantidade_posicoes", "dias_sem_contagem", "material", "lote", "tipo_deposito"):
+        try:
+            return str(int(float(str(valor))))
+        except (ValueError, TypeError):
+            return str(valor)
     return str(valor)
 
 
@@ -184,6 +187,18 @@ def upload():
             return redirect(url_for("upload"))
     
     return render_template("upload.html")
+
+
+@app.route("/atualizar-dados", methods=["POST"])
+def atualizar_dados():
+    ctrl = _get_controller()
+    if ctrl is None:
+        return redirect(url_for("upload"))
+    try:
+        ctrl.carregar()
+    except Exception as e:
+        flash(f"Erro ao atualizar dados: {e}", "error")
+    return redirect(url_for("index"))
 
 
 @app.route("/aplicar", methods=["POST"])
@@ -484,6 +499,30 @@ def limpar_exclusao():
 
 # ─── Rotas de Detalhes / Resumo do Documento ────────────────────────────
 
+@app.route("/resumo-execucao/<id_geracao>")
+def resumo_execucao(id_geracao):
+    ctrl = _get_controller()
+    if ctrl is None:
+        return redirect(url_for("upload"))
+    try:
+        resumo = ctrl.obter_resumo_geracao(id_geracao)
+        if resumo is None:
+            return render_template("resumo_execucao.html", tem_dados=False)
+
+        return render_template("resumo_execucao.html",
+            tem_dados=True,
+            id_geracao=resumo.get("id_geracao", ""),
+            data_geracao=_formatar_data(resumo.get("data_geracao", "")),
+            total_lotes=int(resumo.get("total_lotes_geracao", 0)),
+            total_posicoes=int(resumo.get("total_posicoes_geracao", 0)),
+            total_valor=_formatar_moeda(resumo.get("total_valor_geracao", 0)),
+            tipo_deposito=str(int(float(str(resumo.get("tipo_deposito", ""))))) if resumo.get("tipo_deposito") and pd.notna(resumo.get("tipo_deposito")) else "",
+            documento=str(resumo.get("documento", "")) if pd.notna(resumo.get("documento")) else "",
+            criterio=resumo.get("criterio", ""),
+        )
+    except Exception as e:
+        return render_template("resumo_execucao.html", tem_dados=False, erro=str(e))
+
 @app.route("/detalhes-geracao/<id_geracao>")
 def detalhes_geracao(id_geracao):
     ctrl = _get_controller()
@@ -511,7 +550,7 @@ def detalhes_geracao(id_geracao):
                 elif c["chave"] == "quantidade_posicoes":
                     linha[c["chave"]] = str(int(float(str(v)))) if pd.notna(v) else "0"
                 else:
-                    linha[c["chave"]] = str(v) if pd.notna(v) else "---"
+                    linha[c["chave"]] = _formatar_valor_tabela(c["chave"], v) if pd.notna(v) else "---"
             linhas.append(linha)
 
         return jsonify({"ok": True, "colunas": colunas, "dados": linhas})
@@ -545,4 +584,5 @@ def resumo_documento(id_geracao):
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    port = int(os.getenv("PORT", 5000))
+    app.run(host="0.0.0.0", port=port, debug=False)

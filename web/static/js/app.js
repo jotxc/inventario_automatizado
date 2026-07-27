@@ -86,6 +86,11 @@ document.addEventListener("DOMContentLoaded", function () {
                         if (totaisDiv) {
                             totaisDiv.textContent = `Lotes: ${data.totais.lotes}  |  Posicoes: ${data.totais.posicoes}  |  Valor Total: ${data.totais.valor}`;
                         }
+                        const btnGerar = document.getElementById("btnGerar");
+                        if (btnGerar) {
+                            btnGerar.disabled = false;
+                            btnGerar.classList.remove("btn-disabled");
+                        }
                         reiniciarOrdenacao();
                     } else {
                         if (tabelaDiv) tabelaDiv.innerHTML = `<div class="tabela-mensagem">${data.erro || "Erro desconhecido"}</div>`;
@@ -209,7 +214,7 @@ document.addEventListener("DOMContentLoaded", function () {
         const btn = e.target.closest("[data-acao='ver']");
         if (btn) {
             const id = btn.dataset.id;
-            window.location.href = `/resumo-documento/${id}`;
+            window.location.href = `/resumo-execucao/${id}`;
         }
     });
 
@@ -243,6 +248,18 @@ document.addEventListener("DOMContentLoaded", function () {
                     });
 
                     modalExclusao.classList.remove("hidden");
+
+                    const buscaInput = document.getElementById("modalBuscaDescricao");
+                    if (buscaInput) {
+                        buscaInput.value = "";
+                        buscaInput.addEventListener("keyup", function () {
+                            const termo = this.value.toLowerCase();
+                            document.querySelectorAll("#modalListaDescricoes .modal-checkbox-item").forEach(item => {
+                                const texto = item.textContent.toLowerCase();
+                                item.style.display = texto.includes(termo) ? "" : "none";
+                            });
+                        });
+                    }
                 })
                 .catch(err => alert("Erro ao carregar descricoes: " + err));
         });
