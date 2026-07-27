@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% set subtitulo = "Visao Geral por Tipo de Deposito" %}
+
+{% block content %}
+<div style="margin-bottom: 15px; display: flex; align-items: center; gap: 15px;">
+    <a href="{{ url_for('index') }}" class="btn btn-outline-primary">← VOLTAR</a>
+    <a href="{{ url_for('visao_geral') }}" class="btn btn-primary">🔄 Atualizar</a>
+</div>
+
+{% if tipos %}
+    {% for t in tipos %}
+    <div class="visao-geral-card">
+        <h3>Deposito Tipo {{ t.tipo_deposito }}</h3>
+
+        <div class="barra-progresso">
+            <div class="barra">
+                <div class="preenchimento" style="width: {{ t.pct_contados }}%;"></div>
+            </div>
+            <span class="pct">{{ t.pct_contados|int }}% ja contados</span>
+        </div>
+
+        <div class="status-texto" style="color: {{ t.cor_critica }};">
+            {{ t.texto_status }} — {{ t.lotes_nunca_contados }} lote(s) nao contado(s)
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="metricas">
+            <div class="metrica">
+                <span class="rotulo">Total de lotes:</span>
+                <span class="valor">{{ t.total_lotes }}</span>
+            </div>
+            <div class="metrica">
+                <span class="rotulo">Lotes nao contados:</span>
+                <span class="valor">{{ t.lotes_nunca_contados }}</span>
+            </div>
+            <div class="metrica">
+                <span class="rotulo">Tempo medio parado:</span>
+                <span class="valor">{{ t.media_dias }} d</span>
+            </div>
+            <div class="metrica">
+                <span class="rotulo">Lote mais antigo:</span>
+                <span class="valor">{{ t.max_dias }} d</span>
+            </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="metricas">
+            <div class="metrica">
+                <span class="rotulo">Valor total:</span>
+                <span class="valor">{{ t.valor_total }}</span>
+            </div>
+            <div class="metrica">
+                <span class="rotulo">Valor pendente:</span>
+                <span class="valor" style="color: {{ t.cor_critica }};">{{ t.valor_primeira }}</span>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+{% else %}
+    <div class="empty-state">
+        Nenhum dado disponivel. Importe os arquivos primeiro.
+    </div>
+{% endif %}
+{% endblock %}
+
+{% block rodape %}
+{% if tipos %}
+    {{ tipos|length }} tipo(s) de deposito, {{ tipos|sum(attribute='total_lotes') }} lote(s) disponiveis
+{% else %}
+    Sem dados para exibir
+{% endif %}
+{% endblock %}

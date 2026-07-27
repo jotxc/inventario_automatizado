@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% set subtitulo = "Documento gerado em " + data_geracao %}
+
+{% block content %}
+<div class="card" style="padding: 20px 0;">
+    <h2 style="text-align: center; font-size: 22px; color: var(--cor-primaria); margin-bottom: 25px;">
+        Resumo da Execucao
+    </h2>
+
+    <div class="resultado-cards">
+        <div class="resultado-card">
+            <div class="icone">📦</div>
+            <div class="valor">{{ total_lotes }}</div>
+            <div class="rotulo">Lotes</div>
+        </div>
+
+        <div class="resultado-card">
+            <div class="icone">📍</div>
+            <div class="valor">{{ total_posicoes }}</div>
+            <div class="rotulo">Posicoes</div>
+        </div>
+
+        <div class="resultado-card">
+            <div class="icone">💰</div>
+            <div class="valor">{{ total_valor }}</div>
+            <div class="rotulo">Valor Total</div>
+        </div>
+
+        {% if tipo_deposito %}
+        <div class="resultado-card">
+            <div class="icone">🏭</div>
+            <div class="valor" style="font-size: 18px;">{{ tipo_deposito }}</div>
+            <div class="rotulo">Tipo Deposito</div>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="resultado-botoes">
+        {% if tem_documento %}
+            <a href="{{ url_for('download_documento') }}" class="btn btn-primary btn-lg">📄 Abrir Documento</a>
+        {% endif %}
+        {% if id_geracao %}
+            <button type="button" class="btn btn-success btn-lg" id="btnInformarDocumento" data-id="{{ id_geracao }}">✏ Informar N° Documento</button>
+        {% endif %}
+        <a href="{{ url_for('historico') }}" class="btn btn-primary btn-lg">📋 Abrir Historico</a>
+        <a href="{{ url_for('index') }}" class="btn btn-outline-primary btn-lg">← VOLTAR</a>
+    </div>
+
+    <p style="text-align: center; font-size: 12px; color: var(--cor-texto-secundario); margin-top: 10px;">
+        Documento gerado em {{ data_geracao }}
+    </p>
+</div>
+{% endblock %}
+
+{% block rodape %}
+Documento gerado com sucesso
+{% endblock %}

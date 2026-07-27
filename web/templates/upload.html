@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% set subtitulo = "Upload dos Arquivos de Inventario" %}
+
+{% block content %}
+<div class="card" id="uploadArea">
+    <form id="uploadForm" action="{{ url_for('upload') }}" method="post" enctype="multipart/form-data">
+        <div class="upload-area">
+            <div class="icone-grande">📂</div>
+            <h2>Upload dos Arquivos de Entrada</h2>
+            <p>Arraste os arquivos ou clique para selecionar</p>
+
+            <div class="arquivos-esperados">
+                <label class="arquivo-item">
+                    <span>📄</span>
+                    <span>
+                        <strong>LX02.xlsx</strong><br>
+                        <span class="status">LX02.xlsx</span>
+                    </span>
+                    <input type="file" name="lx02" accept=".xlsx">
+                </label>
+
+                <label class="arquivo-item">
+                    <span>📄</span>
+                    <span>
+                        <strong>YMM141.xlsx</strong><br>
+                        <span class="status">YMM141.xlsx</span>
+                    </span>
+                    <input type="file" name="ymm141" accept=".xlsx">
+                </label>
+
+                <label class="arquivo-item">
+                    <span>📄</span>
+                    <span>
+                        <strong>Custos.xlsx</strong><br>
+                        <span class="status">Custos.xlsx</span>
+                    </span>
+                    <input type="file" name="custos" accept=".xlsx">
+                </label>
+            </div>
+
+            <br>
+            <button type="submit" class="btn btn-success btn-lg">📤 ENVIAR E PROCESSAR</button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block rodape %}
+Selecione os 3 arquivos Excel (LX02, YMM141, Custos) e clique em "ENVIAR E PROCESSAR"
+{% endblock %}

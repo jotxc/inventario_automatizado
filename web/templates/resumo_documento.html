@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% set subtitulo = "Resumo do Documento" %}
+
+{% block content %}
+<div style="margin-bottom: 15px; display: flex; align-items: center; gap: 15px;">
+    <a href="{{ url_for('historico') }}" class="btn btn-outline-primary">← VOLTAR</a>
+    <h2 style="font-size: 18px; margin: 0;">Resumo do Documento</h2>
+    <span style="font-size: 12px; color: var(--cor-texto-secundario);">ID: {{ id_geracao[:8] }}...</span>
+</div>
+
+{% if tem_dados and dados %}
+<div class="tabela-scroll">
+    <table>
+        <thead>
+            <tr>
+                <th class="alinhar-left">Material</th>
+                <th class="alinhar-left">Lote</th>
+                <th class="alinhar-center">Tipo Dep.</th>
+                <th class="alinhar-center">Posicoes</th>
+                <th class="alinhar-right">Valor</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for d in dados %}
+            <tr>
+                <td class="alinhar-left">{{ d.material }}</td>
+                <td class="alinhar-left">{{ d.lote }}</td>
+                <td class="alinhar-center">{{ d.tipo_deposito }}</td>
+                <td class="alinhar-center">{{ d.quantidade_posicoes }}</td>
+                <td class="alinhar-right">{{ d.valor_lote }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% elif erro %}
+<div class="empty-state">
+    Erro ao carregar dados: {{ erro }}
+</div>
+{% else %}
+<div class="empty-state">
+    Nenhum detalhe encontrado para este documento.
+</div>
+{% endif %}
+{% endblock %}
+
+{% block rodape %}
+{% if tem_dados %}
+    {{ dados|length }} lote(s) no documento
+{% else %}
+    Sem dados para exibir
+{% endif %}
+{% endblock %}
