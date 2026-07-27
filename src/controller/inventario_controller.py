@@ -176,6 +176,17 @@ class InventarioController:
     def obter_detalhes_geracao(self, id_geracao):
         return obter_detalhes_geracao(id_geracao)
 
+    def obter_resumo_geracao(self, id_geracao):
+        geracoes = listar_geracoes()
+        if geracoes is None or geracoes.empty:
+            return None
+        geracoes["id_geracao"] = geracoes["id_geracao"].astype(str)
+        id_str = str(id_geracao)
+        linha = geracoes[geracoes["id_geracao"] == id_str]
+        if linha.empty:
+            return None
+        return linha.iloc[0].to_dict()
+
     def consultar_estoque(
         self,
         criterio,
