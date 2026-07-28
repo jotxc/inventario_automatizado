@@ -256,6 +256,22 @@ def gerar():
         limite = 100
     modo_sem_maquina = request.form.get("modo_sem_maquina") == "true"
     baixas_por_ultimo = request.form.get("baixas_por_ultimo") == "true"
+    confirmado = request.form.get("confirmado") == "true"
+    
+    if not confirmado:
+        params_atuais = {
+            "criterio": criterio,
+            "criterio_secundario": criterio_sec,
+            "tipo_deposito": tipo,
+            "limite_posicoes": limite,
+            "modo_sem_maquina": modo_sem_maquina,
+        }
+        if ctrl.parametros_iguais_ultima_geracao(params_atuais):
+            return jsonify({
+                "duplicado": True,
+                "mensagem": "Os parâmetros são idênticos à última geração. Deseja gerar novamente?",
+                "ok": False
+            }), 409
     
     try:
         resultado = ctrl.gerar(
@@ -427,6 +443,23 @@ def atualizar_documento(id_geracao):
         return jsonify({"ok": sucesso, "mensagem": mensagem})
     except Exception as e:
         return jsonify({"erro": str(e), "ok": False}), 500
+
+
+@app.route("/documento-status/<id_geracao>")
+def documento_status(id_geracao):
+    ctrl = _get_controller()
+    if ctrl is None:
+        return jsonify({"documento": ""})
+    try:
+        resumo = ctrl.obter_resumo_geracao(id_geracao)
+        if resumo is None:
+            return jsonify({"documento": ""})
+        doc = resumo.get("documento", "")
+        if pd.isna(doc):
+            doc = ""
+        return jsonify({"documento": str(doc).strip() if doc else ""})
+    except Exception:
+        return jsonify({"documento": ""})
 
 
 # ─── Rotas de Exclusao de Descricao ─────────────────────────────────────

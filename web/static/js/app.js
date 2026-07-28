@@ -112,30 +112,41 @@ document.addEventListener("DOMContentLoaded", function () {
         btnGerar.addEventListener("click", function () {
             const form = document.getElementById("filtrosForm");
             const formData = new FormData(form);
-
-            this.disabled = true;
-            this.textContent = "GERANDO...";
-
-            fetch("/gerar", {
-                method: "POST",
-                body: formData
-            })
-                .then(r => r.json())
-                .then(data => {
-                    if (data.ok && data.redirect) {
-                        window.location.href = data.redirect;
-                    } else {
-                        alert("Erro: " + (data.erro || "Erro desconhecido"));
-                        this.disabled = false;
-                        this.textContent = "GERAR DOCUMENTO";
-                    }
-                })
-                .catch(err => {
-                    alert("Erro de conexao: " + err);
-                    this.disabled = false;
-                    this.textContent = "GERAR DOCUMENTO";
-                });
+            enviarGeracao(formData, this);
         });
+    }
+
+    function enviarGeracao(formData, btn) {
+        btn.disabled = true;
+        btn.textContent = "GERANDO...";
+
+        fetch("/gerar", {
+            method: "POST",
+            body: formData
+        })
+            .then(r => r.json())
+            .then(data => {
+                if (data.ok && data.redirect) {
+                    window.location.href = data.redirect;
+                } else if (data.duplicado) {
+                    if (confirm(data.mensagem || "Os parâmetros são idênticos à última geração. Deseja gerar novamente?")) {
+                        formData.append("confirmado", "true");
+                        enviarGeracao(formData, btn);
+                    } else {
+                        btn.disabled = false;
+                        btn.textContent = "GERAR DOCUMENTO";
+                    }
+                } else {
+                    alert("Erro: " + (data.erro || "Erro desconhecido"));
+                    btn.disabled = false;
+                    btn.textContent = "GERAR DOCUMENTO";
+                }
+            })
+            .catch(err => {
+                alert("Erro de conexao: " + err);
+                btn.disabled = false;
+                btn.textContent = "GERAR DOCUMENTO";
+            });
     }
 
     // ─── Ordenacao da tabela (client-side) ────────────────────────────
@@ -173,16 +184,21 @@ document.addEventListener("DOMContentLoaded", function () {
     // ─── Historico: busca ─────────────────────────────────────────────
     const historicoBusca = document.getElementById("historicoBusca");
     if (historicoBusca) {
+        let debounceTimer;
         historicoBusca.addEventListener("keyup", function () {
-            const termo = this.value.toLowerCase();
-            document.querySelectorAll(".historico-card").forEach(card => {
-                const text = card.textContent.toLowerCase();
-                card.style.display = text.includes(termo) ? "" : "none";
-            });
-            const total = document.querySelectorAll('.historico-card[style*="display: none"]').length;
-            const visiveis = document.querySelectorAll(".historico-card").length - total;
-            const label = document.getElementById("historicoTotal");
-            if (label) label.textContent = `${visiveis} de ${document.querySelectorAll(".historico-card").length} geracao(oes)`;
+            clearTimeout(debounceTimer);
+            const input = this;
+            debounceTimer = setTimeout(function () {
+                const termo = input.value.toLowerCase();
+                document.querySelectorAll(".historico-card").forEach(card => {
+                    const text = card.textContent.toLowerCase();
+                    card.style.display = text.includes(termo) ? "" : "none";
+                });
+                const total = document.querySelectorAll('.historico-card[style*="display: none"]').length;
+                const visiveis = document.querySelectorAll(".historico-card").length - total;
+                const label = document.getElementById("historicoTotal");
+                if (label) label.textContent = `${visiveis} de ${document.querySelectorAll(".historico-card").length} geracao(oes)`;
+            }, 300);
         });
     }
 
@@ -191,23 +207,53 @@ document.addEventListener("DOMContentLoaded", function () {
         const btn = e.target.closest("#btnInformarDocumento");
         if (btn) {
             const id = btn.dataset.id;
-            const numero = prompt("Digite o numero do documento SAP:");
-            if (numero && numero.trim()) {
-                const formData = new FormData();
-                formData.append("numero", numero.trim());
-                fetch(`/atualizar-documento/${id}`, { method: "POST", body: formData })
-                    .then(r => r.json())
-                    .then(data => {
-                        if (data.ok) {
-                            alert("Documento salvo com sucesso!");
-                        } else {
-                            alert("Erro: " + (data.mensagem || data.erro));
-                        }
-                    })
-                    .catch(err => alert("Erro: " + err));
-            }
+            promptDocumento(id);
         }
     });
+
+    function promptDocumento(id) {
+        fetch(`/documento-status/${id}`)
+            .then(r => r.json())
+            .then(status => {
+                if (status.documento) {
+                    if (!confirm(`Já existe documento "${status.documento}" para esta geração. Deseja substituir?`)) {
+                        return;
+                    }
+                }
+                const numero = prompt("Digite o número do documento SAP:");
+                if (numero && numero.trim()) {
+                    const formData = new FormData();
+                    formData.append("numero", numero.trim());
+                    fetch(`/atualizar-documento/${id}`, { method: "POST", body: formData })
+                        .then(r => r.json())
+                        .then(data => {
+                            if (data.ok) {
+                                alert("Documento salvo com sucesso!");
+                            } else {
+                                alert("Erro: " + (data.mensagem || data.erro));
+                            }
+                        })
+                        .catch(err => alert("Erro: " + err));
+                }
+            })
+            .catch(() => {
+                const numero = prompt("Digite o número do documento SAP:");
+                if (numero && numero.trim()) {
+                    const formData = new FormData();
+                    formData.append("numero", numero.trim());
+                    fetch(`/atualizar-documento/${id}`, { method: "POST", body: formData })
+                        .then(r => r.json())
+                        .then(data => {
+                            if (data.ok) {
+                                alert("Documento salvo com sucesso!");
+                            } else {
+                                alert("Erro: " + (data.mensagem || data.erro));
+                            }
+                        })
+                        .catch(err => alert("Erro: " + err));
+                }
+            });
+    }
 
     // ─── Historico: ver resumo ─────────────────────────────────────────
     document.addEventListener("click", function (e) {
@@ -422,21 +468,47 @@ document.addEventListener("DOMContentLoaded", function () {
         const btn = e.target.closest("[data-acao='editar-doc']");
         if (btn) {
             const id = btn.dataset.id;
-            const numero = prompt("Digite o numero do documento SAP:");
-            if (numero && numero.trim()) {
-                const formData = new FormData();
-                formData.append("numero", numero.trim());
-                fetch(`/atualizar-documento/${id}`, { method: "POST", body: formData })
-                    .then(r => r.json())
-                    .then(data => {
-                        if (data.ok) {
-                            location.reload();
-                        } else {
-                            alert("Erro: " + data.mensagem);
+            fetch(`/documento-status/${id}`)
+                .then(r => r.json())
+                .then(status => {
+                    if (status.documento) {
+                        if (!confirm(`Já existe documento "${status.documento}" para esta geração. Deseja substituir?`)) {
+                            return;
                         }
-                    })
-                    .catch(err => alert("Erro: " + err));
-            }
+                    }
+                    const numero = prompt("Digite o número do documento SAP:");
+                    if (numero && numero.trim()) {
+                        const formData = new FormData();
+                        formData.append("numero", numero.trim());
+                        fetch(`/atualizar-documento/${id}`, { method: "POST", body: formData })
+                            .then(r => r.json())
+                            .then(data => {
+                                if (data.ok) {
+                                    location.reload();
+                                } else {
+                                    alert("Erro: " + data.mensagem);
+                                }
+                            })
+                            .catch(err => alert("Erro: " + err));
+                    }
+                })
+                .catch(() => {
+                    const numero = prompt("Digite o número do documento SAP:");
+                    if (numero && numero.trim()) {
+                        const formData = new FormData();
+                        formData.append("numero", numero.trim());
+                        fetch(`/atualizar-documento/${id}`, { method: "POST", body: formData })
+                            .then(r => r.json())
+                            .then(data => {
+                                if (data.ok) {
+                                    location.reload();
+                                } else {
+                                    alert("Erro: " + data.mensagem);
+                                }
+                            })
+                            .catch(err => alert("Erro: " + err));
+                    }
+                });
         }
     });
 
